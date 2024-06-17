@@ -6,6 +6,8 @@ VM = qemu
 
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -fno-builtin -ffreestanding -fno-stack-protector -fomit-frame-pointer -falign-jumps -falign-functions -falign-labels -falign-loops -mno-red-zone -Wall -Werror -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-cpp
 
+RUSTFLAGS = --edition 2021 --target x86_64-unknown-none --crate-type staticlib --emit obj -Cpanic=abort -Coverflow-checks=no
+
 ifeq ($(DEBUG), 0)
 CARGO_BUILD_MODE = --release
 CFLAGS += -O3 -finline-functions
@@ -51,7 +53,8 @@ else
 endif
 
 
-#### BUILD TARGETS ####
+#### CREATE TARGETS ####
+
 
 disk.img:
 	touch $@
@@ -65,6 +68,9 @@ build/partitions/kernel.img: build/kernel.bin
 	sudo mount -t vfat $@ $(MOUNT_DIR)
 	sudo cp $^ $(MOUNT_DIR)
 	sudo umount $(MOUNT_DIR)
+
+
+#### BUILD TARGETS ####
 
 
 build/bootloader/boot.bin: src/bootloader/boot.asm
@@ -82,16 +88,13 @@ build/bootloader/entry.o: src/bootloader/entry.c
 build/bootloader/lib.elf: src/bootloader/lib.asm
 	nasm -f elf64 $^ -o $@
 
-build/bootloader/debug.o: src/bootloader/debug.c
-	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
-
 build/bootloader/print.o: src/bootloader/print.c
 	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
 
 build/bootloader/file.o: src/bootloader/file.c
 	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
 
-build/bootloader/launcher.o: build/bootloader/entry.elf build/bootloader/entry.o build/bootloader/file.o build/bootloader/print.o build/bootloader/debug.o build/bootloader/lib.elf
+build/bootloader/launcher.o: build/bootloader/entry.elf build/bootloader/entry.o build/bootloader/file.o build/bootloader/print.o build/bootloader/lib.elf
 	ld -nostdlib -T src/bootloader/link.ld $^ -o $@
 
 build/bootloader/launcher.bin: build/bootloader/launcher.o
@@ -106,10 +109,10 @@ build/bootloader.bin: build/bootloader/boot.bin build/bootloader/loader.bin buil
 build/kernel.elf: src/kernel.asm
 	nasm -f elf64 $^ -o $@
 
-build/kernel.o: src/kernel.c
-	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
+build/kernel.a: src/kernel.rs
+	rustc $(RUSTFLAGS) $^ -o $@
 
-build/kernel: build/kernel.elf build/kernel.o  build/bootloader/print.o  build/bootloader/lib.elf
+build/kernel: build/kernel.elf build/kernel.a
 	ld -nostdlib -T src/link.ld $^ -o $@
 
 build/kernel.bin: build/kernel
