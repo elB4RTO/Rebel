@@ -1,12 +1,11 @@
 #include "file.h"
 #include "lib.h"
-#include "print.h"
 #include "debug.h"
 
-// the base address of the disk in memory, see 'loader.asm'
+// the base in-memory address of the disk, see 'loader.asm'
 #define DISK_BASE 0x1000000
 
-// the base address of the disk partition where the kernel is stored
+// the base in-memory address of the disk partition where the kernel is stored
 #define PARTITION_BASE 0x1007E00
 
 // offset of the LBA value
@@ -23,7 +22,10 @@
 #define BAD_CLUSTER 0xFFF7
 #define END_OF_CLUSTER_CHAIN 0xFFF8
 
-// returns the address of the Bios Parametes Block
+// the cluster index starts from 2 and cannot be greater than 65535
+#define VALIDATE_CLUSTER_INDEX(IDX) ASSERT((cluster_index >= 2 && cluster_index <= 65535), "Invalid cluster index")
+
+/// returns the in-memory address of the BPB
 static struct BPB* get_bpb(void)
 {
     /*const uint32_t lba = *(uint32_t*)((uint64_t)DISK_BASE + LBA_OFFSET + 8);
@@ -32,7 +34,7 @@ static struct BPB* get_bpb(void)
     return (struct BPB*)PARTITION_BASE;
 }
 
-// returns the address of the FAT table
+/// returns the in-memory address of the FAT table
 static uint16_t* get_fat_table(const struct BPB *const bpb)
 {
     const uint32_t fat_offset = (uint32_t)bpb->reserved_sector_count * bpb->bytes_per_sector;
@@ -40,20 +42,27 @@ static uint16_t* get_fat_table(const struct BPB *const bpb)
     return (uint16_t*)((uint8_t*)bpb + fat_offset);
 }
 
+/// returns the value stored in the FAT table for the given `cluster_index`
 static uint16_t get_cluster_value(const struct BPB *const bpb, const uint32_t cluster_index)
 {
+    VALIDATE_CLUSTER_INDEX(cluster_index)
+
     const uint16_t *const fat_table = get_fat_table(bpb);
 
     return fat_table[cluster_index];
 }
 
+/// returns the size of a cluster in the filesystem
 static uint32_t get_cluster_size(const struct BPB *const bpb)
 {
     return (uint32_t)bpb->bytes_per_sector * bpb->sectors_per_cluster;
 }
 
+/// returns the offset in the data section for the give `cluster_index`
 static uint32_t get_data_offset(const struct BPB *const bpb, const uint32_t cluster_index)
 {
+    VALIDATE_CLUSTER_INDEX(cluster_index)
+
     const uint32_t cluster_size = get_cluster_size(bpb);
     const uint32_t cluster_offset = (cluster_index - 2) * cluster_size;
     const uint32_t reserved_size = (uint32_t)bpb->reserved_sector_count * bpb->bytes_per_sector;
@@ -64,7 +73,7 @@ static uint32_t get_data_offset(const struct BPB *const bpb, const uint32_t clus
     return data_offset + cluster_offset;
 }
 
-// returns the address of the root directory in the filesystem
+/// returns the in-memory address of the root directory
 static struct DirEntry* get_root_directory(const struct BPB *const bpb)
 {
     const uint32_t fat_start_sector = bpb->reserved_sector_count;
@@ -75,11 +84,13 @@ static struct DirEntry* get_root_directory(const struct BPB *const bpb)
     return (struct DirEntry*)((uint8_t*)bpb + root_dir_offset);
 }
 
-static bool is_file_name_equal(const struct DirEntry *const dir_entry, const char* name, const char* ext)
+/// checks whether the given `entry` matches the given `name` and `ext`
+static bool is_file_name_equal(const struct DirEntry *const entry, const char* name, const char* ext)
 {
-    return memcmp(dir_entry->name, name, 8) == 0 && memcmp(dir_entry->ext, ext, 3) == 0;
+    return memcmp(entry->name, name, 8) == 0 && memcmp(entry->ext, ext, 3) == 0;
 }
 
+/// splits the given `path` and stores the filename and the extension in `name` and `ext respectively
 static bool split_path(const char* path, char* name, char* ext)
 {
     int i;
@@ -119,7 +130,7 @@ static bool split_path(const char* path, char* name, char* ext)
     return true;
 }
 
-// returns the entry for the given file in the filesystem, if it exists
+/// returns the entry for the given file in the filesystem, if it exists
 static struct DirEntry* search_file(const char* path)
 {
     char name[8] = {"        "};
@@ -150,16 +161,14 @@ static struct DirEntry* search_file(const char* path)
         }
     }
 
-    return 0; // invalid, file not found
+    return 0; // file not found
 }
 
-// copies the data in the buffer. returns the size of data copied
+/// copies the data into `buffer`, starting from the given `cluster_index`, for a size defined by `size`
+/// returns the size of data copied
 static uint32_t read_raw_data(uint32_t cluster_index, uint8_t* buffer, const uint32_t size)
 {
-    if (cluster_index < 2 || cluster_index > 65535) // the cluster index starts from 2 and cannot be greater than 65535
-    {
-        ASSERT(0, "Invalid cluster index");
-    }
+    VALIDATE_CLUSTER_INDEX(cluster_index)
 
     const struct BPB *const bpb = get_bpb();
     const uint32_t cluster_size = get_cluster_size(bpb);
@@ -178,12 +187,12 @@ static uint32_t read_raw_data(uint32_t cluster_index, uint8_t* buffer, const uin
         else if (cluster_value >= END_OF_CLUSTER_CHAIN)
         {
             const uint32_t left_to_read = size - read_size;
-            memcpy(buffer, data, left_to_read);
+            memmove(buffer, data, left_to_read);
             read_size += left_to_read;
             break;
         }
 
-        memcpy(buffer, data, cluster_size);
+        memmove(buffer, data, cluster_size);
 
         data += cluster_size;
         buffer += cluster_size;
@@ -194,12 +203,6 @@ static uint32_t read_raw_data(uint32_t cluster_index, uint8_t* buffer, const uin
     return read_size;
 }
 
-static uint32_t read_file(const uint32_t cluster_index, void* buffer, const uint32_t size)
-{
-    return read_raw_data(cluster_index, (uint8_t*)buffer, size);
-}
-
-// loads the given file into the given memory address
 bool load_file(char* path, const uint64_t addr)
 {
     const struct DirEntry *const entry = search_file(path);
@@ -209,9 +212,8 @@ bool load_file(char* path, const uint64_t addr)
         const uint32_t file_size = entry->file_size;
         const uint32_t cluster_index = entry->cluster_index;
 
-        if (read_file(cluster_index, (void*)addr, file_size) == file_size)
+        if (read_raw_data(cluster_index, (uint8_t*)addr, file_size) == file_size)
         {
-            printf("READ SUCCESSFULLY\n");
             return true;
         }
     }

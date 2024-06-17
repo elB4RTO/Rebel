@@ -67,12 +67,12 @@ load_loader:                                    ; load the loader into memory an
 err_disk_ext:
     mov bp, MsgDiskExtErr
     mov cx, MsgDiskExtErrLen
-    jmp short end
+    jmp short print_err
 
 err_read_disk:
     mov bp, MsgLoadLoaderErr
     mov cx, MsgLoadLoaderErrLen
-    jmp short end
+    jmp short print_err
 
 print_err:
     mov ah, 0x13

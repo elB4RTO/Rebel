@@ -140,7 +140,7 @@ static void write_screen(const char* buffer, int size, char color)
         if (row >= ROWS)
         {
             // simulates a screen scroll, by copying every line data on the upper line, leaving the last line empty and free to use
-            memcpy(sb->buffer, sb->buffer+LINE_SIZE, LINE_SIZE*24);
+            memmove(sb->buffer, sb->buffer+LINE_SIZE, LINE_SIZE*24);
             memset(sb->buffer+LINE_SIZE*24, 0, LINE_SIZE);
             --row;
         }

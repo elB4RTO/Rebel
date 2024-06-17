@@ -1,10 +1,10 @@
-#ifndef _FILE_H_
-#define _FILE_H_
+#ifndef KERNEL_ENTRY_FILE_H
+#define KERNEL_ENTRY_FILE_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
-// FAT16 Bios Parameter Block fields
+/// FAT16 Bios Parameter Block
 struct BPB
 {
     uint8_t jump[3];
@@ -30,7 +30,7 @@ struct BPB
     uint8_t file_system[8];
 } __attribute__((packed));
 
-// FAT16 Directory Entry fields
+/// FAT16 Directory Entry
 struct DirEntry
 {
     uint8_t name[8];
@@ -48,8 +48,10 @@ struct DirEntry
     uint32_t file_size;
 } __attribute__((packed));
 
+/// checks whether the filesystem has a valid FAT signature
 void init_fs(void);
 
+/// loads the content of the file provided by `path` into the memory address provided by `addr`
 bool load_file(char *path, uint64_t addr);
 
-#endif
+#endif // KERNEL_ENTRY_FILE_H
