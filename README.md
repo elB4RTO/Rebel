@@ -5,6 +5,16 @@
 
 <br/><br/>
 
+## Dependencies
+
+To compile Rust sources, the target `x86_64-unknown-none`  must be available. It can be installed via:
+
+```
+rustup target add x86_64-unknown-none
+```
+
+<br/><br/>
+
 ## Try it out
 
 One command to rule them all
