@@ -1,18 +1,25 @@
-.PHONY: all clean prepare build create run
-
-DEBUG = 1
+.PHONY: all clean prepare build bootloader kernel create run
 
 VM = qemu
 
+ifeq ($(VM),bochs)
+EMULATOR = bochs -q
+else
+EMULATOR = qemu-system-x86_64 -hda disk.img -m 1G -cpu qemu64,pdpe1gb
+endif
+
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -fno-builtin -ffreestanding -fno-stack-protector -fomit-frame-pointer -falign-jumps -falign-functions -falign-labels -falign-loops -mno-red-zone -Wall -Werror -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-cpp
 
-RUSTFLAGS = --edition 2021 --target x86_64-unknown-none --crate-type staticlib --emit obj -Cpanic=abort -Coverflow-checks=no
+CARGO_FLAGS = --offline
+
+DEBUG = 1
 
 ifeq ($(DEBUG), 0)
-CARGO_BUILD_MODE = --release
+CARGO_FLAGS += --release
+CARGO_TARGET_DIR = build/kernel/x86_64-unknown-none/release
 CFLAGS += -O3 -finline-functions
 else
-CARGO_BUILD_MODE =
+CARGO_TARGET_DIR = build/kernel/x86_64-unknown-none/debug
 CFLAGS += -O0 -g
 endif
 
@@ -38,19 +45,18 @@ prepare:
 	mkdir -p build/partitions
 	mkdir -p $(MOUNT_DIR)
 
-build: prepare $(BOOTLOADER) $(KERNEL)
-	#cargo build --offline $(CARGO_BUILD_MODE)
+build: prepare bootloader kernel
 
-create: disk.img build/partitions/boot.img  build/partitions/kernel.img build/bootloader.bin
+bootloader: $(BOOTLOADER)
+
+kernel: $(KERNEL)
+
+create: disk.img build/partitions/boot.img build/partitions/kernel.img build/bootloader.bin
 	dd if=build/partitions/boot.img of=disk.img bs=512 count=62 conv=notrunc
 	dd if=build/partitions/kernel.img of=disk.img bs=512 seek=63 conv=notrunc
 
 run:
-ifeq ($(VM),bochs)
-	bochs -q
-else
-	qemu-system-x86_64 -hda disk.img -m 1G -cpu qemu64,pdpe1gb
-endif
+	$(EMULATOR)
 
 
 #### CREATE TARGETS ####
@@ -109,11 +115,12 @@ build/bootloader.bin: build/bootloader/boot.bin build/bootloader/loader.bin buil
 build/kernel.elf: src/kernel.asm
 	nasm -f elf64 $^ -o $@
 
-build/kernel.a: src/kernel.rs
-	rustc $(RUSTFLAGS) $^ -o $@
+$(CARGO_TARGET_DIR)/librebel.a:
+	cargo build $(CARGO_FLAGS)
 
-build/kernel: build/kernel.elf build/kernel.a
-	ld -nostdlib -T src/link.ld $^ -o $@
+build/kernel.o: build/kernel.elf $(CARGO_TARGET_DIR)/librebel.a
+	ld -T src/link.ld $^ -o $@
 
-build/kernel.bin: build/kernel
+build/kernel.bin: build/kernel.o
 	objcopy -O binary $^ $@
+
