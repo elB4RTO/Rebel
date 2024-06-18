@@ -1,0 +1,14 @@
+[build]
+target = "x86_64-unknown-none"
+target-dir = "build/kernel"
+rustflags = [
+    "-Ccode-model=kernel",
+    "-Cpanic=abort",
+    "-Coverflow-checks=false",
+    "-Cno-redzone"
+]
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "symbols"

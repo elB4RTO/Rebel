@@ -1,0 +1,12 @@
+[package]
+name = "rebel"
+version = "0.1.0"
+license = "MIT"
+description = "An indipendent kernel"
+readme = "README.md"
+authors = ["Valentino Orlandi valentinox@disroot.org"]
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+
