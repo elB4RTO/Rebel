@@ -1,8 +1,5 @@
-#![no_std]
-#![no_main]
 
-#[no_mangle]
-pub extern "C" fn kernel_main() {
+pub(crate) fn start() {
     clear();
     print("Welcome in the kernel");
     loop {}
