@@ -79,37 +79,33 @@ build/partitions/kernel.img: build/kernel.bin
 #### BUILD TARGETS ####
 
 
-build/bootloader/boot.bin: src/bootloader/boot.asm
+build/bootloader/boot.bin: bootloader/boot.asm
 	nasm -f bin $^ -o $@
 
-build/bootloader/loader.bin: src/bootloader/loader.asm
-	nasm -f bin $^ -o $@
-
-build/bootloader/entry.elf: src/bootloader/entry.asm
+build/bootloader/loader.elf: bootloader/loader.asm
 	nasm -f elf64 $^ -o $@
 
-build/bootloader/entry.o: src/bootloader/entry.c
+build/bootloader/entry.o: bootloader/entry.c
 	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
 
-build/bootloader/lib.elf: src/bootloader/lib.asm
+build/bootloader/lib.elf: bootloader/lib.asm
 	nasm -f elf64 $^ -o $@
 
-build/bootloader/print.o: src/bootloader/print.c
+build/bootloader/print.o: bootloader/print.c
 	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
 
-build/bootloader/file.o: src/bootloader/file.c
+build/bootloader/file.o: bootloader/file.c
 	gcc -std=c99 -mcmodel=large $(CFLAGS) -c $^ -o $@
 
-build/bootloader/launcher.o: build/bootloader/entry.elf build/bootloader/entry.o build/bootloader/file.o build/bootloader/print.o build/bootloader/lib.elf
-	ld -nostdlib -T src/bootloader/link.ld $^ -o $@
+build/bootloader/loader.o: build/bootloader/loader.elf build/bootloader/entry.o build/bootloader/file.o build/bootloader/print.o build/bootloader/lib.elf
+	ld -nostdlib -T bootloader/link.ld $^ -o $@
 
-build/bootloader/launcher.bin: build/bootloader/launcher.o
+build/bootloader/loader.bin: build/bootloader/loader.o
 	objcopy -O binary $^ $@
 
-build/bootloader.bin: build/bootloader/boot.bin build/bootloader/loader.bin build/bootloader/launcher.bin
+build/bootloader.bin: build/bootloader/boot.bin build/bootloader/loader.bin
 	dd if=build/bootloader/boot.bin >> $@
 	dd if=build/bootloader/loader.bin >> $@
-	dd if=build/bootloader/launcher.bin >> $@
 
 
 build/kernel.elf: src/kernel.asm
