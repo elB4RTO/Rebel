@@ -3,8 +3,9 @@ ENTRY(start)
 
 SECTIONS
 {
-    . = 0xFFFF800000100000;
-	
+    . = 0x7E00;
+    . = ALIGN(16);
+
     .text : {
         *(.text)
     }
@@ -13,7 +14,6 @@ SECTIONS
         *(.rodata)
     }
 
-    . = ALIGN(16);
     .data : {
         *(.data)
     }

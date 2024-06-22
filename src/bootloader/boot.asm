@@ -3,7 +3,7 @@
 [BITS 16]
 
 ; emulate a FAT16 file system
-jmp short start
+jmp short boot
 nop
 
 ; BPB (Bios Parameter Block)
@@ -28,6 +28,9 @@ Signature           db 0x29
 VolumeID            dd 0xD105
 VolumeIDString      db 'REBEL BOOT '            ; must be exactly 11 Bytes
 SystemIDString      db 'FAT16   '               ; must be exactly 8 Bytes
+
+boot:
+    jmp 0:start                                 ; ensure CS is set properly
 
 start:
     mov ax, 3                                   ; switch to video mode 3 (80x25)
