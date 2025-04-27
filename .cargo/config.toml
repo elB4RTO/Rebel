@@ -10,5 +10,6 @@ rustflags = [
 
 [profile.release]
 lto = true
+opt-level = 0
 codegen-units = 1
 strip = "symbols"
