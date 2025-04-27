@@ -1,13 +1,31 @@
 use crate::tty::*;
 
-pub(crate) fn start() {
-    clear();
-    print("Welcome in the kernel");
-    loop {}
+const KERNEL_NAME : &str = env!("CARGO_PKG_NAME");
+const KERNEL_VERSION : &str = env!("CARGO_PKG_VERSION");
+
+pub(crate)
+fn start() {
+    welcome();
+
+    crate::memory::init();
+    crate::memory::paging::init_kernel_tracing_pages();
+
+    #[cfg(feature="unit_tests")]
+    {
+        crate::memory::tests::run();
+        crate::tty::print("\n\n");
+    }
+
+    crate::memory::paging::book_kernel_allocations_space();
+
+    loop { crate::halt(); }
 }
 
 
-#[panic_handler]
-fn panic(msg:&core::panic::PanicInfo) -> ! {
-    loop {}
+fn welcome() {
+    clear();
+    print(KERNEL_NAME);
+    print(" v");
+    print(KERNEL_VERSION);
+    print("\n");
 }
