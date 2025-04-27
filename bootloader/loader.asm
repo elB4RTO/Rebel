@@ -1,7 +1,18 @@
 extern load_kernel
 
-%define CODE_SEG 0x08
-%define DATA_SEG 0x10
+%define CODE_SEG        0x08
+%define DATA_SEG        0x10
+
+%define KPART_ADDRESS   0x8000000               ; 128 MiB past the start of memory
+%define KPART_SIZE      0x8000000               ; 128 MiB
+
+%define ORIGIN          0x0                     ; the start of memory
+%define KERNEL_PADDR    0x1200000               ; 18 MiB past the start of memory (1 MiB reserved, 1 MiB page tables (+ padding), 16 MiB stack)
+
+%define PML4T           0x100000
+%define PDPT_I          0x101000
+%define PDPT_K          0x102000
+%define PDT_K           0x103000
 
 [BITS 16]
 
@@ -63,12 +74,12 @@ system_memory_map:
     cmp dword [es:di+4], 0                      ; check the higher part of the memory region address to be zero
     jne .memory_next
     mov eax, [es:di]                            ; store the lower part of the memory region address
-    cmp eax, 0x100000                           ; check for the address to be 0x100000 (1 MiB past the start of memory)
+    cmp eax, KPART_ADDRESS
     ja .memory_next
     cmp dword [es:di+12], 0                     ; check the length of the region to be large enough
     jne .memory_found
     add eax, [es:di+8]                          ; otherwise, add the lower part of the length to the base address
-    cmp eax, 0x6500000                          ; and then compare it with the address plus the size of the image (0x100000 + 0x6400000, 1 MiB + 128 MiB)
+    cmp eax, KPART_ADDRESS+KPART_SIZE           ; and then compare it with the address plus the size of the image
     jb .memory_next
 
 .memory_found:
@@ -131,7 +142,7 @@ read_fat16:
 
     mov cx, 2048                                ; read 204862 total sectors (204800 + 62 <=> 100 MiB + 31 KiB <=> kernel + bootloader), 100 sectors at a time (204862 / 100)
     xor ebx, ebx
-    mov edi, 0x100000                           ; 0x100000 is the memory address where the kernel partition will be loaded (1 MiB from the start of memory)
+    mov edi, KPART_ADDRESS                      ; the memory address where the kernel partition will be loaded
 
     xor ax, ax
     mov fs, ax                                  ; clear FS to avoid issues while reading the FAT16 image
@@ -324,7 +335,7 @@ Buffer: times 16 db 0
 
 [BITS 32]
 
-%define PWS  00000111b                          ; Present | Writable | Supervisor
+%define PW   00000011b                          ; Present | Writable
 %define HUGE 10000000b                          ; Page Size
 
 protected_mode_start:
@@ -332,40 +343,34 @@ protected_mode_start:
     mov ss, ax
     mov ds, ax
     mov es, ax
+    mov fs, ax
+    mov gs, ax
 
-paging:                                         ; finds a free memory area and initializes the paging structure which is used to translate from virtual address to pysical address (we will use 1 GB pages)
+paging:                                         ; initialize paging tables
     cld
-    mov edi, 0x70000                            ; addresses from 0x80000 to 0x90000 might be used by the BIOS, so use addresses between 0x70000 and 0x80000
+    mov edi, PML4T                              ; addresses from 0x80000 to 0x90000 might be used by the BIOS, so use addresses between 0x70000 and 0x80000
     push edi                                    ; backup EDI since it will be modified by STOSB
     xor eax, eax                                ; clear EAX since its value will be used by STOSD
-    mov ecx, 4096                               ; clear all the 4096 entries
+    mov ecx, 4096                               ; clear 4096 entries
     rep stosd                                   ; copy the value stored in EAX into the address pointed to by EDI
+    pop edi
 
 .identity_map:
-    mov dword [0x70000], 0x71000|PWS
-    mov dword [0x71000], 0x00000|PWS|HUGE             ; use 1 GiB page to identity map the first GiB
+    mov dword [PML4T], PDPT_I|PW
+    mov dword [PDPT_I], ORIGIN|PW|HUGE          ; use 1 GiB page to identity map the first GiB
 
 .map_kernel_pages:
-    mov dword [0x70FF8], 0x72000|PWS                  ; 0x70FF8 = 0x70000 + 0x1FF*8
-    mov dword [0x72FF0], 0x73000|PWS                  ; 0x72FF0 = 0x72000 + 0x1FE*8
-    mov dword [0x73000], 0x6600000|PWS|HUGE           ; 0x73000 = 0x73000 + 0x000*8 (0x6600000 is the first 2MiB aligned address after the in-memory kernel partition)
+    mov eax, PML4T+0xFF8                        ; + 0x1FF*8
+    mov dword [eax], PDPT_K|PW
+    mov eax, PDPT_K+0xFF0                       ; + 0x1FE*8
+    mov dword [eax], PDT_K|PW
+    mov eax, PDT_K                              ; + 0x000*8
+    mov dword [eax], KERNEL_PADDR|PW|HUGE
 
-.map_kernel_1to1:
-    mov dword [0x72FF8], 0x00000|PWS|HUGE             ; 0x72FF8 = 0x72000 + 0x1FF*8
-
-.map_kernel_reursive:
-    mov dword [0x72FE8], 0x72000|PWS                  ; map the third-last entry to the first
-    mov eax, 0x72000
-    mov ebx, 0x6800000                          ; next 2 MiB page after 0x6600000
-    mov ecx, 509
-.kpm_loop:                                      ; map all 509 entries (0x72000 ~ 0x72FE0)
-    push ebx
-    or ebx, PWS|HUGE
-    mov [eax], ebx
-    pop ebx
-    add eax, 0x8
-    add ebx, 0x200000
-    loop .kpm_loop
+.map_kernel_stack:
+    mov eax, PDT_K+0xFF8                        ; + 0x1FF*8
+    mov ebx, KERNEL_PADDR-0x200000|PW|HUGE
+    mov dword [eax], ebx                        ; 0xFFFFFFFFBFE00000~0xFFFFFFFFBFFFFFFF
 
 .enable_pae_pge:
     mov eax, cr4
@@ -379,7 +384,7 @@ paging:                                         ; finds a free memory area and i
     wrmsr                                       ; copy the value back with Write MSR
 
 .set_pml4t_address:
-    mov eax, 0x70000                            ; set the address of the PML4T entry
+    mov eax, PML4T                              ; set the address of the PML4T entry
     mov cr3, eax
 
 .enable_paging:
@@ -427,11 +432,14 @@ long_mode_start:
     mov ss, ax
     mov ds, ax
     mov es, ax
+    mov fs, ax
+    mov gs, ax
 
 launch_kernel:
     call load_kernel
 
-    mov rsp, 0xFFFFFFFF80000000                 ; adjust the kernel stack pointer
+    mov rsp, 0xFFFFFFFFBFFFFFF0                 ; point the kernel stack pointer just below the kernel itself
+    mov rbp, rsp
     mov rax, 0xFFFFFFFF80000000                 ; jump to the kernel
     jmp rax
 
@@ -466,4 +474,3 @@ GDT64End:
 GDT64Desc:
     dw GDT64End - GDT64 - 1
     dd GDT64
-

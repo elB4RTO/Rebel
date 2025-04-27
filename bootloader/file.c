@@ -3,10 +3,10 @@
 #include "debug.h"
 
 // the base in-memory address of the disk, see 'loader.asm'
-#define DISK_BASE 0x100000
+#define DISK_BASE 0x8000000
 
 // the base in-memory address of the disk partition where the kernel is stored
-#define PARTITION_BASE 0x107E00
+#define PARTITION_BASE 0x8007E00
 
 // offset of the LBA value
 #define LBA_OFFSET 0x1BE
@@ -230,4 +230,3 @@ void init_fs(void)
         ASSERT(0, "Invalid filesystem signature");
     }
 }
-

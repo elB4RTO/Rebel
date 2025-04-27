@@ -45,20 +45,20 @@ remap_pic:                                      ; Programmable Interrupt Control
     mov al, 11111111b                           ; mask all the IRQs of the slave
     out 0xA1, al
 
-    mov rax, kernel_entry                       ; cannot directly push the address of the kernel memory (since it is 64 bit and is only possible to push 32 bits immediate values)
-    push 8                                      ; the code segment is the second entry of GDT (8 Bytes each)
-    push rax
-    db 0x48                                     ; the default operand size of RETF is 32 bits, but the data pushed is 64 bits, so override the operand size with a prefix of 48 to change it to 64 bits
-    retf                                        ; use Far Return to load the code segment descriptor into the CS register (normal Return won't do that)
+    ;mov rax, kernel_entry                       ; cannot directly push the address of the kernel memory (since it is 64 bit and is only possible to push 32 bits immediate values)
+    ;push 8                                      ; the code segment is the second entry of GDT (8 Bytes each)
+    ;push rax
+    ;db 0x48                                     ; the default operand size of RETF is 32 bits, but the data pushed is 64 bits, so override the operand size with a prefix of 48 to change it to 64 bits
+    ;retf                                        ; use Far Return to load the code segment descriptor into the CS register (normal Return won't do that)
+    jmp kernel_entry
 
 kernel_entry:
     xor ax, ax
     mov ss, ax                                  ; zero the SS register to handle interrupts without causing exceptions
 
-    mov rsp, 0xFFFFFFFF80000000                 ; adjust the kernel stack pointer address
     call kernel_main
 
-    sti                                         ; interrupts were disabled while switching to long mode
+    sti
 
 end:
     hlt
@@ -116,9 +116,8 @@ GDT64Ptr: dw GDT64Len-1
 
 TSS:
     dd 0x00000000                               ; reserved
-    dq 0xFFFFFFFF80000000                       ; RSP0
+    dq 0xFFFFFFFFBFFFFFF0                       ; RSP0
     times 88 db 0                               ; unused for the moment
     dd TSSLen                                   ; offset of the IO Permission Bitmap (unused, set to the size of TSS itself)
 
 TSSLen: equ $-TSS
-
