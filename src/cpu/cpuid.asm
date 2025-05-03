@@ -1,4 +1,7 @@
+.section .text
+
 .global cpuid_address_size
+
 
 cpuid_address_size:
     push rbp

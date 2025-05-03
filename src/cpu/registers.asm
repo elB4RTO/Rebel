@@ -1,3 +1,5 @@
+.section .text
+
 .global get_cr0
 .global set_cr0
 .global get_cr2
