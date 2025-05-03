@@ -7,8 +7,11 @@ pub(crate)
 fn start() {
     welcome();
 
+    crate::idt::init_idt();
+    crate::idt::enable_interrupts();
+
     crate::memory::init();
-    crate::memory::paging::init_kernel_tracing_pages();
+    crate::memory::init_kernel_tracing_pages();
 
     #[cfg(feature="unit_tests")]
     {
@@ -16,7 +19,7 @@ fn start() {
         crate::tty::print("\n\n");
     }
 
-    crate::memory::paging::book_kernel_allocations_space();
+    crate::memory::book_kernel_allocations_space();
 
     loop { crate::halt(); }
 }
