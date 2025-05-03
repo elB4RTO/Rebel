@@ -1,8 +1,6 @@
 use crate::panic::*;
 use crate::memory::address::AddressError;
-use crate::memory::MemoryError;
-use crate::memory::paging::PagingError;
-use crate::memory::paging::{TracingError, TracingPageError};
+use crate::memory::{MemoryError, PagingError, TracingError, TracingPageError};
 
 
 /// Utility functions to be implemented on [`Result`]

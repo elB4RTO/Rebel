@@ -1,11 +1,17 @@
 use crate::memory::address::AddressError;
-use crate::memory::MemoryError;
-use crate::memory::paging::PagingError;
+use crate::memory::{MemoryError, PagingError};
 
 
 pub(crate)
 trait Log {
     fn log(&self);
+
+    fn log_and_then<F>(&self, f:F)
+        where F: FnOnce()
+    {
+        self.log();
+        f()
+    }
 }
 
 
