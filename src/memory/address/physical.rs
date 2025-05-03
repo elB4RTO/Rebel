@@ -8,7 +8,8 @@ use crate::memory::paging::iterators::*;
 /// Represents a physical address
 #[repr(align(8))]
 #[derive(Clone,Copy,PartialEq,PartialOrd)]
-pub(crate) struct PhysicalAddress {
+pub(crate)
+struct PhysicalAddress {
     address : u64,
 }
 

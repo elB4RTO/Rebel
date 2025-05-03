@@ -83,7 +83,7 @@ impl Allocator {
     ///
     /// Returns an [`Err`] containing the error any sub-process fails, otherwise
     /// returns an [`Ok`] containing the [`LogicalAddress`] of the allocated memory.
-    pub(super)
+    pub(in crate::memory)
     fn allocate(&self, size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
         if let Some(addr) = paging::search::find_available_space(size, owner) {
             return paging::take::take_available_space(addr.physical, size, owner)
@@ -112,7 +112,7 @@ impl Allocator {
     ///
     /// Returns an [`Err`] containing the error any sub-process fails, otherwise
     /// returns an [`Ok`] containing the [`LogicalAddress`] of the allocated memory.
-    pub(super)
+    pub(in crate::memory)
     fn allocate_zeroed(&self, size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
         self.allocate(size, owner)
             .and_then(|laddr| unsafe {
@@ -140,7 +140,7 @@ impl Allocator {
     ///
     /// Returns an [`Err`] containing the error any sub-process fails, otherwise
     /// returns an [`Ok`] containing the [`LogicalAddress`] of the new memory location.
-    pub(super)
+    pub(in crate::memory)
     fn reallocate(&self, laddr:LogicalAddress, new_size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
         let (can_relocate,old_size) = paging::query::can_relocate_inplace(laddr, new_size, owner)
             .map_err(|e| MemoryError::PagingError(e))?;
@@ -153,7 +153,7 @@ impl Allocator {
         unsafe {
             super::memcpy(new_laddr.get(), laddr.get(), old_size);
         }
-        return paging::drop::drop_occupied_space(laddr, old_size, owner)
+        return paging::drop::drop_occupied_space(laddr, owner)
             .map_err(|e| MemoryError::PagingError(e))
             .map(|()| new_laddr)
     }
@@ -164,9 +164,9 @@ impl Allocator {
     ///
     /// Returns an [`Err`] containing the error any sub-process fails, otherwise
     /// returns an empty [`Ok`].
-    pub(super)
-    fn deallocate(&self, laddr:LogicalAddress, size:u64, owner:MemoryOwner) -> Result<(),MemoryError> {
-        return paging::drop::drop_occupied_space(laddr, size, owner)
+    pub(in crate::memory)
+    fn deallocate(&self, laddr:LogicalAddress, owner:MemoryOwner) -> Result<(),MemoryError> {
+        return paging::drop::drop_occupied_space(laddr, owner)
             .map_err(|e| MemoryError::PagingError(e))
     }
 }

@@ -77,7 +77,7 @@ fn run_all_tests() {
     test::remove_entry_second_page(page1, page2);
     // take an entry on multi-page
     test::take_entry_partially_first_page(page1, page2);
-    test::take_entry_second_page(page1, page2);
+    test::take_entry_entirely_second_page(page1, page2);
     // drop an entry on multi-page
     test::drop_entry_first_page(page1, page2);
     test::drop_entry_second_page(page1, page2);
@@ -662,7 +662,7 @@ pub(super) fn drop_entry(page1:&mut TracingPage) {
     assume!(page1.size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
-    check!(drop::drop_occupied_space(0x4000.into(), 0x100, OWNER).is_ok(), "failed to take");
+    check!(drop::drop_occupied_space(0x4000.into(), OWNER).is_ok(), "failed to take");
     // Then
     check!(page1.size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
@@ -701,7 +701,7 @@ pub(super) fn fail__drop_entry_unexisting(page1:&mut TracingPage) {
     assume!(page1.size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
-    check!(drop::drop_occupied_space(0x5000.into(), 0x100, OWNER).is_err(), "result is Ok");
+    check!(drop::drop_occupied_space(0x5000.into(), OWNER).is_err(), "result is Ok");
     // Then
     check!(page1.size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
@@ -1587,7 +1587,7 @@ pub(super) fn take_entry_partially_first_page(page1:&mut TracingPage, page2:&mut
 /// - The first page is not modified
 /// - The second page is updated correctly
 /// - No page is created or deleted
-pub(super) fn take_entry_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn take_entry_entirely_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
     scenario!("Take an entry (multi-page, second entirely)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
@@ -1635,7 +1635,7 @@ pub(super) fn take_entry_second_page(page1:&mut TracingPage, page2:&mut TracingP
 /// - The second page is not modified
 /// - No new page is created
 pub(super) fn drop_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
-    scenario!("Drop an entry (multi-page, first entirely)");
+    scenario!("Drop an entry (multi-page, first)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
     clear_page(page1);
@@ -1645,7 +1645,7 @@ pub(super) fn drop_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPa
     add_multiple_entries(page2);
     assume!(page2.size() == 4, "page2 pre-conditions");
     // When / Then
-    check!(drop::drop_occupied_space(0x1000.into(), 0x100, OWNER).is_ok(), "failed to drop");
+    check!(drop::drop_occupied_space(0x1000.into(), OWNER).is_ok(), "failed to drop");
     // Then
     check!(page1.is_full(), "page 1 size is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
@@ -1682,7 +1682,7 @@ pub(super) fn drop_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPa
 /// - The second page is updated correctly
 /// - No page is created or deleted
 pub(super) fn drop_entry_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
-    scenario!("Drop an entry (multi-page, second entirely)");
+    scenario!("Drop an entry (multi-page, second)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
     clear_page(page1);
@@ -1692,7 +1692,7 @@ pub(super) fn drop_entry_second_page(page1:&mut TracingPage, page2:&mut TracingP
     add_multiple_entries(page2);
     assume!(page2.size() == 4, "page2 pre-conditions");
     // When / Then
-    check!(drop::drop_occupied_space(0x1001100.into(), 0x100, OWNER).is_ok(), "failed to drop");
+    check!(drop::drop_occupied_space(0x1001100.into(), OWNER).is_ok(), "failed to drop");
     // Then
     check!(page1.is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);

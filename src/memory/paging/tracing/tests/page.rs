@@ -82,13 +82,11 @@ fn run_all_tests() {
     test::take_free_entry_partially_middle(page);
     test::fail__take_free_entry_smaller(page);
     // drop taken space
-    test::fail__drop_free_entry_entirely(page);
-    test::fail__drop_free_entry_partially(page);
-    test::fail__drop_taken_entry_bigger(page);
-    test::fail__drop_taken_entry_smaller(page);
-    test::drop_taken_entry_entirely_noncontiguous(page);
-    test::drop_taken_entry_entirely_contiguous_right(page);
-    test::drop_taken_entry_entirely_contiguous_left(page);
+    test::fail__drop_free_entry(page);
+    test::drop_taken_entry_noncontiguous(page);
+    test::drop_taken_entry_contiguous_right(page);
+    test::drop_taken_entry_contiguous_left(page);
+    test::drop_taken_entry_contiguous_both(page);
     // resize taken space
     test::fail__resize_free_entry_smaller(page);
     test::fail__resize_free_entry_bigger(page);
@@ -121,7 +119,7 @@ fn run_all_tests() {
     test::take_free_entry_partially_half_on_full_page(page);
     test::take_free_entry_partially_middle_on_full_page(page);
     // drop on full page
-    test::drop_taken_entry_entirely_contiguous_both_on_full_page(page);
+    test::drop_taken_entry_contiguous_both_on_full_page(page);
     // resize on full page
     test::resize_taken_entry_bigger_last_on_full_page(page);
 
@@ -1856,21 +1854,21 @@ pub(super) fn fail__take_free_entry_smaller(page:&mut TracingPage) {
 ///
 /// ### When
 ///
-/// - Requesting to entirely drop a free entry
+/// - Requesting to drop a free entry
 ///
 /// ### Then
 ///
 /// - The request is refused
 /// - The page is not modified
-pub(super) fn fail__drop_free_entry_entirely(page:&mut TracingPage) {
-    fail_scenario!("Drop a free entry entirely");
+pub(super) fn fail__drop_free_entry(page:&mut TracingPage) {
+    fail_scenario!("Drop a free entry");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
     add_entries(page);
     assume!(page.is_empty() == false, "page pre-conditions");
     // When / Then
-    check!(page.drop(0x10200000.into(), 0x200000).is_err(), "result is Ok");
+    check!(page.drop(0x10200000.into()).is_err(), "result is Ok");
     // Then
     check!(page.size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
@@ -1893,133 +1891,22 @@ pub(super) fn fail__drop_free_entry_entirely(page:&mut TracingPage) {
 ///
 /// ### When
 ///
-/// - Requesting to partially drop a free entry
-///
-/// ### Then
-///
-/// - The request is refused
-/// - The page is not modified
-pub(super) fn fail__drop_free_entry_partially(page:&mut TracingPage) {
-    fail_scenario!("Drop a free entry partially");
-    // Given
-    clear_page(page);
-    assume!(page.is_empty() == true, "page pre-conditions");
-    add_entries(page);
-    assume!(page.is_empty() == false, "page pre-conditions");
-    // When / Then
-    check!(page.drop(0x10200000.into(), 0x100000).is_err(), "result is Ok");
-    // Then
-    check!(page.size() == 4, "page size is different");
-    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(0), &expected_md), "entry 0 is different");
-    let expected_md = Metadata::new_free(PhysicalAddress::from(0x10200000), LogicalAddress::from(0xFFFF100000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(1), &expected_md), "entry 1 is different");
-    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x11000000), LogicalAddress::from(0xFFFF100000200000), 0x200000);
-    check!(compare_metadata(page.entry_at(2), &expected_md), "entry 2 is different");
-    let expected_md = Metadata::new_free(PhysicalAddress::from(0x1F800000), LogicalAddress::from(0xFFFF400000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(3), &expected_md), "entry 3 is different");
-    test_passed!();
-    wait!();
-}
-
-/// # Test
-///
-/// ### Given
-///
-/// - A [`TracingPage`] containing some entries
-///
-/// ### When
-///
-/// - Requesting to drop some space whish is smaller than the corresponding taken entry
-///
-/// ### Then
-///
-/// - The request is refused
-/// - The page is not modified
-pub(super) fn fail__drop_taken_entry_bigger(page:&mut TracingPage) {
-    fail_scenario!("Drop space smaller than a taken entry");
-    // Given
-    clear_page(page);
-    assume!(page.is_empty() == true, "page pre-conditions");
-    add_entries(page);
-    assume!(page.is_empty() == false, "page pre-conditions");
-    // When / Then
-    check!(page.drop(0x11000000.into(), 0x100000).is_err(), "result is Ok");
-    // Then
-    check!(page.size() == 4, "page size is different");
-    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(0), &expected_md), "entry 0 is different");
-    let expected_md = Metadata::new_free(PhysicalAddress::from(0x10200000), LogicalAddress::from(0xFFFF100000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(1), &expected_md), "entry 1 is different");
-    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x11000000), LogicalAddress::from(0xFFFF100000200000), 0x200000);
-    check!(compare_metadata(page.entry_at(2), &expected_md), "entry 2 is different");
-    let expected_md = Metadata::new_free(PhysicalAddress::from(0x1F800000), LogicalAddress::from(0xFFFF400000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(3), &expected_md), "entry 3 is different");
-    test_passed!();
-    wait!();
-}
-
-/// # Test
-///
-/// ### Given
-///
-/// - A [`TracingPage`] containing some entries
-///
-/// ### When
-///
-/// - Requesting to drop some space whish is bigger than the corresponding taken entry
-///
-/// ### Then
-///
-/// - The request is refused
-/// - The page is not modified
-pub(super) fn fail__drop_taken_entry_smaller(page:&mut TracingPage) {
-    fail_scenario!("Drop space bigger than a taken entry");
-    // Given
-    clear_page(page);
-    assume!(page.is_empty() == true, "page pre-conditions");
-    add_entries(page);
-    assume!(page.is_empty() == false, "page pre-conditions");
-    // When / Then
-    check!(page.drop(0x11000000.into(), 0x300000).is_err(), "result is Ok");
-    // Then
-    check!(page.size() == 4, "page size is different");
-    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(0), &expected_md), "entry 0 is different");
-    let expected_md = Metadata::new_free(PhysicalAddress::from(0x10200000), LogicalAddress::from(0xFFFF100000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(1), &expected_md), "entry 1 is different");
-    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x11000000), LogicalAddress::from(0xFFFF100000200000), 0x200000);
-    check!(compare_metadata(page.entry_at(2), &expected_md), "entry 2 is different");
-    let expected_md = Metadata::new_free(PhysicalAddress::from(0x1F800000), LogicalAddress::from(0xFFFF400000000000), 0x200000);
-    check!(compare_metadata(page.entry_at(3), &expected_md), "entry 3 is different");
-    test_passed!();
-    wait!();
-}
-
-/// # Test
-///
-/// ### Given
-///
-/// - A [`TracingPage`] containing some entries
-///
-/// ### When
-///
-/// - Requesting to entirely drop a taken entry which is not contiguous to
+/// - Requesting to drop a taken entry which is not contiguous to
 ///   any other free entry
 ///
 /// ### Then
 ///
 /// - The entry is updated correctly
 /// - The entry is not merged with neighbour free entries
-pub(super) fn drop_taken_entry_entirely_noncontiguous(page:&mut TracingPage) {
-    scenario!("Drop a taken entry entirely (non-contiguous)");
+pub(super) fn drop_taken_entry_noncontiguous(page:&mut TracingPage) {
+    scenario!("Drop a taken entry (non-contiguous)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
     add_entries(page);
     assume!(page.is_empty() == false, "page pre-conditions");
     // When / Then
-    check!(page.drop(0x11000000.into(), 0x200000).is_ok(), "failed to drop");
+    check!(page.drop(0x11000000.into()).is_ok(), "failed to drop");
     // Then
     check!(page.size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
@@ -2042,7 +1929,7 @@ pub(super) fn drop_taken_entry_entirely_noncontiguous(page:&mut TracingPage) {
 ///
 /// ### When
 ///
-/// - Requesting to entirely drop a taken entry which is followed by a free
+/// - Requesting to drop a taken entry which is followed by a free
 ///   entry that is contiguous to it
 ///
 /// ### Then
@@ -2050,15 +1937,15 @@ pub(super) fn drop_taken_entry_entirely_noncontiguous(page:&mut TracingPage) {
 /// - The entry is updated correctly
 /// - The entry is merged with the following free entry
 /// - The array is updated correctly
-pub(super) fn drop_taken_entry_entirely_contiguous_right(page:&mut TracingPage) {
-    scenario!("Drop a taken entry entirely (contiguous (right))");
+pub(super) fn drop_taken_entry_contiguous_right(page:&mut TracingPage) {
+    scenario!("Drop a taken entry (contiguous, right)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
     add_contiguous_entries(page);
     assume!(page.is_empty() == false, "page pre-conditions");
     // When / Then
-    check!(page.drop(0x10200000.into(), 0x200000).is_ok(), "failed to drop");
+    check!(page.drop(0x10200000.into()).is_ok(), "failed to drop");
     // Then
     check!(page.size() == 3, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
@@ -2081,7 +1968,7 @@ pub(super) fn drop_taken_entry_entirely_contiguous_right(page:&mut TracingPage) 
 ///
 /// ### When
 ///
-/// - Requesting to entirely drop a taken entry which is preceded by a free
+/// - Requesting to drop a taken entry which is preceded by a free
 ///   entry that is contiguous to it
 ///
 /// ### Then
@@ -2089,15 +1976,15 @@ pub(super) fn drop_taken_entry_entirely_contiguous_right(page:&mut TracingPage) 
 /// - The entry is updated correctly
 /// - The entry is merged with the preceding free entry
 /// - The array is updated correctly
-pub(super) fn drop_taken_entry_entirely_contiguous_left(page:&mut TracingPage) {
-    scenario!("Drop a taken entry entirely (contiguous (left))");
+pub(super) fn drop_taken_entry_contiguous_left(page:&mut TracingPage) {
+    scenario!("Drop a taken entry (contiguous, left)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
     add_contiguous_entries(page);
     assume!(page.is_empty() == false, "page pre-conditions");
     // When / Then
-    check!(page.drop(0x10500000.into(), 0x100000).is_ok(), "failed to drop");
+    check!(page.drop(0x10500000.into()).is_ok(), "failed to drop");
     // Then
     check!(page.size() == 3, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x200000);
@@ -2107,6 +1994,45 @@ pub(super) fn drop_taken_entry_entirely_contiguous_left(page:&mut TracingPage) {
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x10400000), LogicalAddress::from(0xFFFF000000400000), 0x200000);
     check!(compare_metadata(page.entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::default();
+    check!(compare_metadata(page.entry_at(3), &expected_md), "entry 3 is different");
+    test_passed!();
+    wait!();
+}
+
+/// # Test
+///
+/// ### Given
+///
+/// - A [`TracingPage`] containing some entries
+///
+/// ### When
+///
+/// - Requesting to drop a taken entry which is both preceded and followed
+///   by a free entry that are contiguous to it
+///
+/// ### Then
+///
+/// - The entry is updated correctly
+/// - The entry is merged with both the preceding and following free entries
+/// - The array is updated correctly
+pub(super) fn drop_taken_entry_contiguous_both(page:&mut TracingPage) {
+    scenario!("Drop a taken entry (contiguous, both)");
+    // Given
+    clear_page(page);
+    assume!(page.is_empty() == true, "page pre-conditions");
+    add_contiguous_entries(page);
+    assume!(page.is_empty() == false, "page pre-conditions");
+    page.entry_at_mut(0).set_free();
+    // When / Then
+    check!(page.drop(0x10200000.into()).is_ok(), "failed to drop");
+    // Then
+    check!(page.size() == 2, "page size is different");
+    let expected_md = Metadata::new_free(PhysicalAddress::from(0x10000000), LogicalAddress::from(0xFFFF000000000000), 0x500000);
+    check!(compare_metadata(page.entry_at(0), &expected_md), "entry 0 is different");
+    let expected_md = Metadata::new_taken(PhysicalAddress::from(0x10500000), LogicalAddress::from(0xFFFF000000500000), 0x100000);
+    check!(compare_metadata(page.entry_at(1), &expected_md), "entry 1 is different");
+    let expected_md = Metadata::default();
+    check!(compare_metadata(page.entry_at(2), &expected_md), "entry 2 is different");
     check!(compare_metadata(page.entry_at(3), &expected_md), "entry 3 is different");
     test_passed!();
     wait!();
@@ -2238,15 +2164,15 @@ pub(super) fn resize_taken_entry_smaller_noncontiguous(page:&mut TracingPage) {
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken entry, which is not contiguous its following
-///   entry, to a bigger size
+/// - Requesting to resize a taken entry, which is followed but not contiguous to
+///   a free entry, to a bigger size
 ///
 /// ### Then
 ///
 /// - The request is refused
 /// - The page is not modified
 pub(super) fn fail__resize_taken_entry_bigger_noncontiguous(page:&mut TracingPage) {
-    fail_scenario!("Resize a taken entry to a bigger size (non-contiguous)");
+    fail_scenario!("Resize a taken entry (bigger, non-contiguous free)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2276,8 +2202,8 @@ pub(super) fn fail__resize_taken_entry_bigger_noncontiguous(page:&mut TracingPag
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken entry, which following entry is also taken,
-///   to a smaller size
+/// - Requesting to resize a taken entry, which is followed and contiguous to
+///   a taken entry, to a smaller size
 ///
 /// ### Then
 ///
@@ -2286,7 +2212,7 @@ pub(super) fn fail__resize_taken_entry_bigger_noncontiguous(page:&mut TracingPag
 /// - The returned reminder is zero
 /// - The page is updated correctly
 pub(super) fn resize_taken_entry_smaller_contiguous_taken(page:&mut TracingPage) {
-    scenario!("Resize a taken entry to a smaller size contiguous to a taken entry");
+    scenario!("Resize a taken entry (smaller, contiguous taken)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2320,15 +2246,15 @@ pub(super) fn resize_taken_entry_smaller_contiguous_taken(page:&mut TracingPage)
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken, entry which following entry is also taken,
-///   to a bigger size
+/// - Requesting to resize a taken entry, which is followed and contiguous to
+///   a taken entry, to a bigger size
 ///
 /// ### Then
 ///
 /// - The request is refused
 /// - The page is not modified
 pub(super) fn fail__resize_taken_entry_bigger_contiguous_taken(page:&mut TracingPage) {
-    fail_scenario!("Resize a taken entry to a bigger size contiguous to a taken entry");
+    fail_scenario!("Resize a taken entry (bigger, contiguous taken)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2358,8 +2284,8 @@ pub(super) fn fail__resize_taken_entry_bigger_contiguous_taken(page:&mut Tracing
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken entry, which following entry is free,
-///   to a smaller size
+/// - Requesting to resize a taken entry, which is followed and contiguus to
+///   a free entry, to a smaller size
 ///
 /// ### Then
 ///
@@ -2368,7 +2294,7 @@ pub(super) fn fail__resize_taken_entry_bigger_contiguous_taken(page:&mut Tracing
 /// - The returned reminder is zero
 /// - The page is updated correctly
 pub(super) fn resize_taken_entry_smaller_contiguous_free(page:&mut TracingPage) {
-    scenario!("Resize a taken entry to a smaller size contiguous to a free entry");
+    scenario!("Resize a taken entry (smaller, contiguous free)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2400,9 +2326,9 @@ pub(super) fn resize_taken_entry_smaller_contiguous_free(page:&mut TracingPage) 
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken entry, which following entry is free,
-///   to a bigger size. The requested size equals the sum of the sizes of
-///   the two entries.
+/// - Requesting to resize a taken entry, which followed and contiguous to
+///   a free entry, to a bigger size. The requested size equals the sum of
+///   the sizes of the two entries.
 ///
 /// ### Then
 ///
@@ -2411,7 +2337,7 @@ pub(super) fn resize_taken_entry_smaller_contiguous_free(page:&mut TracingPage) 
 /// - The returned reminder is zero
 /// - The page is updated correctly
 pub(super) fn resize_taken_entry_bigger_contiguous_free_equal(page:&mut TracingPage) {
-    scenario!("Resize a taken entry to a bigger size contiguous to a free entry (equal)");
+    scenario!("Resize a taken entry (bigger, contiguous free, equal)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2443,9 +2369,9 @@ pub(super) fn resize_taken_entry_bigger_contiguous_free_equal(page:&mut TracingP
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken entry, which is followed by a free entry,
-///   to a bigger size. The requested size is smaller than the sum of the sizes
-///   of the two entries.
+/// - Requesting to resize a taken entry, which is followed and contiguous to
+///   a free entry, to a bigger size. The requested size is smaller than the sum
+///   of the sizes of the two entries.
 ///
 /// ### Then
 ///
@@ -2454,7 +2380,7 @@ pub(super) fn resize_taken_entry_bigger_contiguous_free_equal(page:&mut TracingP
 /// - The returned reminder is zero
 /// - The page is updated correctly
 pub(super) fn resize_taken_entry_bigger_contiguous_free_big(page:&mut TracingPage) {
-    scenario!("Resize a taken entry to a bigger size contiguous to a free entry (big)");
+    scenario!("Resize a taken entry (bigger, contiguous free, big)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2486,16 +2412,16 @@ pub(super) fn resize_taken_entry_bigger_contiguous_free_big(page:&mut TracingPag
 ///
 /// ### When
 ///
-/// - Requesting to resize a taken entry, which is followed by a free entry,
-///   to a bigger size. The requested size is bigger than the sum of the sizes
-///   of the two entries.
+/// - Requesting to resize a taken entry, which is followed and contiguous to
+///   a free entry, to a bigger size. The requested size is bigger than the sum
+///   of the sizes of the two entries.
 ///
 /// ### Then
 ///
 /// - The request is refused
 /// - The page is not modified
 pub(super) fn fail__resize_taken_entry_bigger_contiguous_free_small(page:&mut TracingPage) {
-    fail_scenario!("Resize a taken entry to a bigger size contiguous to a free entry (small)");
+    fail_scenario!("Resize a taken entry (bigger, contiguous free, small)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2532,7 +2458,7 @@ pub(super) fn fail__resize_taken_entry_bigger_contiguous_free_small(page:&mut Tr
 /// - The request is refused
 /// - The page is not modified
 pub(super) fn fail__resize_taken_entry_bigger_last(page:&mut TracingPage) {
-    fail_scenario!("Resize a taken entry to a bigger size (last)");
+    fail_scenario!("Resize a taken entry (bigger, last)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
@@ -2986,15 +2912,15 @@ pub(super) fn take_free_entry_partially_middle_on_full_page(page:&mut TracingPag
 /// - The entry is updated correctly
 /// - The entry is merged with the preceding and following free entries
 /// - The array is updated correctly
-pub(super) fn drop_taken_entry_entirely_contiguous_both_on_full_page(page:&mut TracingPage) {
-    scenario!("Drop a taken entry entirely on full page (contiguous (both))");
+pub(super) fn drop_taken_entry_contiguous_both_on_full_page(page:&mut TracingPage) {
+    scenario!("Drop a taken entry on full page (contiguous, both)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
     fill_page(page);
     assume!(page.is_full() == true, "page pre-conditions");
     // When
-    check!(page.drop(0x2000.into(), 0x100).is_ok(), "failed to drop");
+    check!(page.drop(0x2000.into()).is_ok(), "failed to drop");
     // Then
     check!(page.is_full() == false, "page is still full");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1F00), LogicalAddress::from(0xAF00), 0x300);
@@ -3020,7 +2946,7 @@ pub(super) fn drop_taken_entry_entirely_contiguous_both_on_full_page(page:&mut T
 /// - The entry is updated correctly
 /// - A negative reminder is returned
 pub(super) fn resize_taken_entry_bigger_last_on_full_page(page:&mut TracingPage) {
-    scenario!("Resize a taken entry to a bigger size on full page (last)");
+    scenario!("Resize a taken entry on full page (bigger, last)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");

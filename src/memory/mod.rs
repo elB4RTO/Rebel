@@ -2,34 +2,52 @@ pub(crate) mod address;
 pub(crate) mod allocator;
 pub(in crate::memory) mod info;
 pub(in crate::memory) mod map;
-pub(crate) mod paging;
+pub(in crate::memory) mod paging;
 pub(crate) mod setup;
 
 #[cfg(feature="unit_tests")]
 pub(crate) mod tests;
 
-pub(crate) use setup::init;
+
+pub(crate) use map::available_space;
+pub(crate) use map::total_space;
+pub(crate) use paging::{PagingError, TracingError, TracingPageError};
+pub(crate) use paging::book_kernel_allocations_space;
 pub(crate) use paging::init_kernel_tracing_pages;
+pub(crate) use setup::init;
+
 
 use address::*;
 use allocator::Allocator;
 use paging::PageType;
 
-use crate::GetOrPanic;
 use crate::panic::*;
 
 use core::arch::global_asm;
 
 
-// Sizes in Bytes
+// Sizes in Bytes of 1 GiB
+#[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_1GiB   : u64 = 0x40000000;
+
+// Sizes in Bytes of 2 MiB
+#[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_2MiB   : u64 = 0x200000;
+
+// Sizes in Bytes of 4 KiB
+#[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_4KiB   : u64 = 0x1000;
+
+// Sizes in Bytes of 8 B
+#[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_8b     : u64 = 0x8;
+
+// Sizes in Bytes of 1 B
+#[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_1B     : u64 = 0x1;
 
@@ -184,7 +202,7 @@ static ALLOCATOR : Allocator = Allocator::new();*/
 
 global_asm!(include_str!("mem.asm"));
 
-extern "C" {
+unsafe extern "C" {
     /// Sets `size` Bytes of `dst` to `val`
     pub(crate)
     fn memset(dst:u64, val:u8, size:u64);
@@ -198,7 +216,7 @@ extern "C" {
     fn memcmp(addr1:u64, addr2:u64, size:u64) -> bool;
 
     /// Works as `memcpy` but is safer since it checks whether the two
-    /// memory locations overlaps and copy data accordingly
+    /// memory locations overlaps and copies data accordingly
     pub(crate)
     fn safe_copy(dst:u64, src:u64, size:u64);
 }
@@ -236,14 +254,14 @@ fn aligned_to_native(value:u64) -> u64 {
 ///
 /// ## Returns
 ///
-/// Returns an [`Ok`] containing the [`LogicalAddress`] of the allocation
-/// is successful, otherwise returns an [`Err`] containing the error.
+/// Returns an [`Ok`] containing the logical address of the allocation
+/// if successful, otherwise returns an [`Err`] containing the error.
 pub(crate)
-fn alloc(size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
+fn alloc(size:u64, owner:MemoryOwner) -> Result<u64,MemoryError> {
     Allocator::new().allocate(aligned_to_native(size), owner)
         .map(|laddr| match laddr.is_aligned(NATIVE_ALIGNMENT) {
             false => MemoryError::UnalignedAddress.panic(),
-            true => laddr,
+            true => laddr.get(),
         })
 }
 
@@ -251,41 +269,55 @@ fn alloc(size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
 ///
 /// ## Returns
 ///
-/// Returns an [`Ok`] containing the [`LogicalAddress`] of the allocation
-/// is successful, otherwise returns an [`Err`] containing the error.
+/// Returns an [`Ok`] containing the logical address of the allocation
+/// if successful, otherwise returns an [`Err`] containing the error.
 pub(crate)
-fn zalloc(size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
+fn zalloc(size:u64, owner:MemoryOwner) -> Result<u64,MemoryError> {
     Allocator::new().allocate_zeroed(aligned_to_native(size), owner)
         .map(|laddr| match laddr.is_aligned(NATIVE_ALIGNMENT) {
             false => MemoryError::UnalignedAddress.panic(),
-            true => laddr,
+            true => laddr.get(),
         })
 }
 
-/// Re-allocates the allocation in `laddr` with a size of `new_size`
+/// Re-allocates the allocation in `addr` with a size of `new_size`
+///
+/// ## Note
+///
+/// The `addr` argument shall be a logical address.
 ///
 /// ## Returns
 ///
-/// Returns an [`Ok`] containing the [`LogicalAddress`] of the allocation
-/// is successful, otherwise returns an [`Err`] containing the error.
+/// Returns an [`Ok`] containing the logical address of the allocation
+/// if successful, otherwise returns an [`Err`] containing the error.
 pub(crate)
-fn realloc(laddr:LogicalAddress, new_size:u64, owner:MemoryOwner) -> Result<LogicalAddress,MemoryError> {
+fn realloc(addr:u64, new_size:u64, owner:MemoryOwner) -> Result<u64,MemoryError> {
+    let laddr = LogicalAddress::from(addr);
     if !laddr.is_aligned(NATIVE_ALIGNMENT) {
         return Err(MemoryError::UnalignedAddress);
     }
     Allocator::new().reallocate(laddr, aligned_to_native(new_size), owner)
+        .map(|laddr| match laddr.is_aligned(NATIVE_ALIGNMENT) {
+            false => MemoryError::UnalignedAddress.panic(),
+            true => laddr.get(),
+        })
 }
 
-/// De-allocates the allocation in `laddr` with a size of `size`
+/// De-allocates the allocation in `addr`
+///
+/// ## Note
+///
+/// The `addr` argument shall be a logical address.
 ///
 /// ## Returns
 ///
-/// Returns an [`Ok`] containing the [`LogicalAddress`] of the allocation
-/// is successful, otherwise returns an [`Err`] containing the error.
+/// Returns an empty [`Ok`] if successful, otherwise returns an [`Err`]
+/// containing the error.
 pub(crate)
-fn dealloc(laddr:LogicalAddress, size:u64, owner:MemoryOwner) -> Result<(),MemoryError> {
+fn dealloc(addr:u64, owner:MemoryOwner) -> Result<(),MemoryError> {
+    let laddr = LogicalAddress::from(addr);
     if !laddr.is_aligned(NATIVE_ALIGNMENT) {
         return Err(MemoryError::UnalignedAddress);
     }
-    Allocator::new().deallocate(laddr, aligned_to_native(size), owner)
+    Allocator::new().deallocate(laddr, owner)
 }

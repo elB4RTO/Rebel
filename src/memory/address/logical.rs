@@ -44,7 +44,8 @@ const TABLE_INDEX_BITMASK   : u64 = 0x1FF;
 /// Represents a logical address
 #[repr(align(8))]
 #[derive(Clone,Copy,PartialEq,PartialOrd)]
-pub(crate) struct LogicalAddress {
+pub(crate)
+struct LogicalAddress {
     address : u64,
 }
 

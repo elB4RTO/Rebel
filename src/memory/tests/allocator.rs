@@ -66,9 +66,9 @@ pub(super) fn allocate_deallocate_1B() {
     assume!(check_pages(0,0,0,0,0,0), "pages pre-conditions");
     // When
     let laddr = alloc(SIZE_1B, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr, SIZE_1B, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR", laddr.get().try_into().unwrap());
+    show_hex!("LADDR", laddr as usize);
     test!(check_pages(1,1,1,0,0,1), "paging structure mismatch");
     wait!();
 }
@@ -95,11 +95,11 @@ pub(super) fn allocate_deallocate_1B_twice() {
     // When
     let laddr1 = alloc(SIZE_1B, MemoryOwner::Kernel).get_or_panic();
     let laddr2 = alloc(SIZE_1B, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr1, SIZE_1B, MemoryOwner::Kernel).ok_or_panic();
-    dealloc(laddr2, SIZE_1B, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr1, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr2, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR 1", laddr1.get().try_into().unwrap());
-    show_hex!("LADDR 2", laddr2.get().try_into().unwrap());
+    show_hex!("LADDR 1", laddr1 as usize);
+    show_hex!("LADDR 2", laddr2 as usize);
     check!(laddr1 != laddr2, "addresses are identical");
     test!(check_pages(1,1,1,0,0,1), "paging structure mismatch");
     wait!();
@@ -126,9 +126,9 @@ pub(super) fn allocate_deallocate_4KiB() {
     assume!(check_pages(0,0,0,0,0,0), "pages pre-conditions");
     // When
     let laddr = alloc(SIZE_4KiB, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr, SIZE_4KiB, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR", laddr.get().try_into().unwrap());
+    show_hex!("LADDR", laddr as usize);
     test!(check_pages(1,1,1,0,0,1), "paging structure mismatch");
     wait!();
 }
@@ -155,11 +155,11 @@ pub(super) fn allocate_deallocate_4KiB_twice() {
     // When
     let laddr1 = alloc(SIZE_4KiB, MemoryOwner::Kernel).get_or_panic();
     let laddr2 = alloc(SIZE_4KiB, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr1, SIZE_4KiB, MemoryOwner::Kernel).ok_or_panic();
-    dealloc(laddr2, SIZE_4KiB, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr1, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr2, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR 1", laddr1.get().try_into().unwrap());
-    show_hex!("LADDR 2", laddr2.get().try_into().unwrap());
+    show_hex!("LADDR 1", laddr1 as usize);
+    show_hex!("LADDR 2", laddr2 as usize);
     check!(laddr1 != laddr2, "addresses are identical");
     test!(check_pages(1,1,1,0,0,2), "paging structure mismatch");
     wait!();
@@ -186,9 +186,9 @@ pub(super) fn allocate_deallocate_2MiB() {
     assume!(check_pages(0,0,0,0,0,0), "pages pre-conditions");
     // When
     let laddr = alloc(SIZE_2MiB, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr, SIZE_2MiB, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR", laddr.get().try_into().unwrap());
+    show_hex!("LADDR", laddr as usize);
     test!(check_pages(1,1,0,0,1,0), "paging structure mismatch");
     wait!();
 }
@@ -215,11 +215,11 @@ pub(super) fn allocate_deallocate_2MiB_twice() {
     // When
     let laddr1 = alloc(SIZE_2MiB, MemoryOwner::Kernel).get_or_panic();
     let laddr2 = alloc(SIZE_2MiB, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr1, SIZE_2MiB, MemoryOwner::Kernel).ok_or_panic();
-    dealloc(laddr2, SIZE_2MiB, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr1, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr2, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR 1", laddr1.get().try_into().unwrap());
-    show_hex!("LADDR 2", laddr2.get().try_into().unwrap());
+    show_hex!("LADDR 1", laddr1 as usize);
+    show_hex!("LADDR 2", laddr2 as usize);
     check!(laddr1 != laddr2, "addresses are identical");
     test!(check_pages(1,1,0,0,2,0), "paging structure mismatch");
     wait!();
@@ -247,9 +247,9 @@ pub(super) fn allocate_deallocate_128MiB() {
     // When
     let size_128mib = SIZE_2MiB * 64;
     let laddr = alloc(size_128mib, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr, size_128mib, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR", laddr.get().try_into().unwrap());
+    show_hex!("LADDR", laddr as usize);
     test!(check_pages(1,1,0,0,64,0), "paging structure mismatch");
     wait!();
 }
@@ -276,9 +276,9 @@ pub(super) fn allocate_deallocate_512MiB() {
     // When
     let size_512mib = SIZE_2MiB * 256;
     let laddr = alloc(size_512mib, MemoryOwner::Kernel).get_or_panic();
-    dealloc(laddr, size_512mib, MemoryOwner::Kernel).ok_or_panic();
+    dealloc(laddr, MemoryOwner::Kernel).ok_or_panic();
     // Then
-    show_hex!("LADDR", laddr.get().try_into().unwrap());
+    show_hex!("LADDR", laddr as usize);
     test!(check_pages(1,0,0,1,0,0), "paging structure mismatch");
     wait!();
 }

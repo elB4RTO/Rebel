@@ -16,18 +16,17 @@ use crate::memory::paging::tracing::*;
 pub(in crate::memory::paging)
 fn drop_occupied_space(
     laddr:LogicalAddress,
-    size:u64,
     owner:MemoryOwner,
-) -> Result<PhysicalAddress, PagingError> {
+) -> Result<(PhysicalAddress,u64), PagingError> {
     let paddr = laddr.to_physical(owner)
         .map_err(|e| PagingError::AddressError(e))?;
     for entry in TracingPagesIterator::new(owner) {
         let tracing_page = unsafe { &mut *TracingPage::from_table_entry(entry) };
         if tracing_page.contains_paddr_strict(paddr) {
-            return tracing_page.drop(paddr, size)
+            return tracing_page.drop(paddr)
                 .map_err(|e| PagingError::from(e))
-                .and_then(|()| merge::merge_tracing_pages(owner)
-                    .map(|()| paddr));
+                .and_then(|size| merge::merge_tracing_pages(owner)
+                    .map(|()| (paddr, size)));
         }
     }
     Err(PagingError::from(TracingError::NotFound))

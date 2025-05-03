@@ -1503,20 +1503,19 @@ impl TracingPage {
     ///
     /// Returns an [`Err`] if the given [`PhysicalAddress`] is not contained in the array,
     /// if the [`Metadata`] is already marked as free, if its size is less than `size`.
-    /// Otherwise returns an empty [`Ok`].
+    /// Otherwise returns an [`Ok`] containing the size of the entry.
     pub(in crate::memory::paging::tracing)
-    fn drop(&mut self, paddr:PhysicalAddress, size:u64) -> Result<(),TracingPageError> {
+    fn drop(&mut self, paddr:PhysicalAddress) -> Result<u64,TracingPageError> {
         for i in 0..self.size {
             if self.metadata[i].contains(paddr) {
                 if self.metadata[i].lower_paddr() != paddr {
                     return Err(TracingPageError::DropPreconditions);
-                } else if self.metadata[i].size() != size {
-                    return Err(TracingPageError::EntrySizeMismatch);
                 } else if self.metadata[i].is_free() { // leave last
                     return Err(TracingPageError::EntryIsFree);
                 }
+                let size = self.metadata[i].size();
                 self.free_and_try_merge(i)?;
-                return Ok(());
+                return Ok(size);
             }
         }
         Err(TracingPageError::NotFound)

@@ -19,9 +19,9 @@ impl PageType {
     pub(in crate::memory::paging) const
     fn size(&self) -> u64 {
         match self {
-            PageType::OneGiB  => SIZE_1GiB,
-            PageType::TwoMiB  => SIZE_2MiB,
-            PageType::FourKiB => SIZE_4KiB,
+            Self::OneGiB  => SIZE_1GiB,
+            Self::TwoMiB  => SIZE_2MiB,
+            Self::FourKiB => SIZE_4KiB,
         }
     }
 }
@@ -37,9 +37,8 @@ impl TryFrom<PageTableType> for PageType {
     /// returns an [`Ok`] with the [`PageType`].
     fn try_from(table_type:PageTableType) -> Result<Self, Self::Error> {
         use PageTableType::*;
-        use PagingError::*;
         match table_type {
-            PageMapLevel4Table => Err(IncompatiblePage),
+            PageMapLevel4Table => Err(PagingError::IncompatiblePage),
             PageDirectoryPointerTable => Ok(Self::OneGiB),
             PageDirectoryTable => Ok(Self::TwoMiB),
             PageTable => Ok(Self::FourKiB),

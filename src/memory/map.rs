@@ -232,6 +232,22 @@ impl MemoryMap {
             }
         }
     }
+
+    fn total_space(&self) -> u64 {
+        self.size * SLICE_SIZE_U64
+    }
+
+    fn available_space(&self) -> u64 {
+        let mut count = 0;
+        let slices_range = unsafe { ((LAST_RESERVED_SLICE+1) as usize)..(self.size as usize) };
+        for idx in slices_range {
+            let slice = unsafe { &*memory_map.slices.add(idx) };
+            if slice.is_free() {
+                count += 1;
+            }
+        }
+        count * SLICE_SIZE_U64
+    }
 }
 
 
@@ -343,6 +359,18 @@ fn init(memory_size:u64) {
     unsafe {
         memory_map.init(slices_paddr, mappable_size);
     }
+}
+
+
+pub(crate)
+fn total_space() -> u64 {
+    unsafe { memory_map.total_space() }
+}
+
+
+pub(crate)
+fn available_space() -> u64 {
+    unsafe { memory_map.available_space() }
 }
 
 

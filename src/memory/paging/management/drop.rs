@@ -13,11 +13,10 @@ use crate::memory::paging::*;
 pub(in crate::memory)
 fn drop_occupied_space(
     laddr:LogicalAddress,
-    size:u64,
     owner:MemoryOwner,
 ) -> Result<(),PagingError> {
-    update_tracing_table(laddr, size, owner)
-        .and_then(|paddr| update_memory_map(paddr, size, owner))
+    update_tracing_table(laddr, owner)
+        .and_then(|(paddr,size)| update_memory_map(paddr, size, owner))
 }
 
 fn update_memory_map(
@@ -31,8 +30,7 @@ fn update_memory_map(
 
 fn update_tracing_table(
     laddr:LogicalAddress,
-    size:u64,
     owner:MemoryOwner,
-) -> Result<PhysicalAddress,PagingError> {
-    tracing::drop::drop_occupied_space(laddr, size, owner)
+) -> Result<(PhysicalAddress, u64),PagingError> {
+    tracing::drop::drop_occupied_space(laddr, owner)
 }

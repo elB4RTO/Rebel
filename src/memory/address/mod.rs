@@ -12,7 +12,8 @@ pub(crate) use physical::PhysicalAddress;
 pub(in crate::memory) use total::TotalAddress;
 
 
-pub(in crate::memory) type AddressResult<A> = Result<A, AddressError>;
+pub(in crate::memory)
+type AddressResult<A> = Result<A, AddressError>;
 
 
 pub(in crate::memory)
