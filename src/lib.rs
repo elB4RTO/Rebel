@@ -4,6 +4,8 @@
 mod kernel;
 
 pub(crate) mod cpu;
+pub(crate) mod idt;
+pub(crate) mod io;
 pub(crate) mod memory;
 pub(crate) mod panic;
 pub(crate) mod traits;
