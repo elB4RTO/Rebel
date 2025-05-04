@@ -231,7 +231,7 @@ pub(in crate::memory) unsafe
 fn memset_defaulted<T:Default>(dst:u64, n:u64) -> *mut T {
     let element_size = core::mem::size_of::<T>() as u64;
     let elem = T::default();
-    let src_addr = (&elem as *const T) as u64;
+    let src_addr = &elem as *const T as u64;
     let mut dst_addr = dst;
     for _ in 0..n {
         memcpy(dst_addr, src_addr, element_size);
