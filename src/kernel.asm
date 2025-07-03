@@ -21,35 +21,6 @@ set_tss:
     mov ax, 0x28
     ltr ax                                      ; load task register (5th entry of the GDT)
 
-remap_pic:                                      ; Programmable Interrupt Controller
-    mov al, 00010001b                           ; b0=1: need 4th init step, b1=0: cascade, b3=0: edge, b4=1: init
-    out 0x20, al                                ; 0x20 is the address of the command register
-    out 0xA0, al                                ; 0xA0 is the address of the slave
-
-    mov al, 0x20                                ; set master IRQ0 to 32
-    out 0x21, al
-    mov al, 40                                  ; set slave IRQ0 to 40
-    out 0xA1, al
-
-    mov al, 00000100b                           ; the slave is attached to the master via IRQ2 (if the 3rd is set it means that the IRQ2 is used)
-    out 0x21, al
-    mov al, 00000010b                           ; for the slave is the 2nd bit
-    out 0xA1, al
-
-    mov al, 00000001b                           ; select the mode: b0=1: x86 mode, b1=0: no AEOI (automatic end of interrupt), b2-3=0: don't use buffered mode, b4=0: don't use fully nested mode
-    out 0x21, al
-    out 0xA1, al
-
-    mov al, 11111100b                           ; mask all the IRQs of the master except IRQ0 and IRQ1 (which is for the keyboard)
-    out 0x21, al
-    mov al, 11111111b                           ; mask all the IRQs of the slave
-    out 0xA1, al
-
-    ;mov rax, kernel_entry                       ; cannot directly push the address of the kernel memory (since it is 64 bit and is only possible to push 32 bits immediate values)
-    ;push 8                                      ; the code segment is the second entry of GDT (8 Bytes each)
-    ;push rax
-    ;db 0x48                                     ; the default operand size of RETF is 32 bits, but the data pushed is 64 bits, so override the operand size with a prefix of 48 to change it to 64 bits
-    ;retf                                        ; use Far Return to load the code segment descriptor into the CS register (normal Return won't do that)
     jmp kernel_entry
 
 kernel_entry:
