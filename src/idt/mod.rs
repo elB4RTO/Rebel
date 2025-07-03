@@ -1,4 +1,8 @@
+/// Interrupt Descriptor Table
 mod idt;
+/// Interrupt Request
+mod irq;
+/// Interrupt Service Routine
 mod isr;
 mod syscall;
 

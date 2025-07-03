@@ -1,17 +1,17 @@
+// IDT - Interrupt Descriptor Table
+
+use crate::idt::irq::*;
 use crate::idt::isr::*;
 use crate::idt::syscall::*;
 
 use core::arch::global_asm;
+
 
 global_asm!(include_str!("idt.asm"));
 
 unsafe extern "C" {
     /// The array of interrupts' vectors
     static interrupts_vectors : [u64; N_INTERRUPTS];
-
-    /// Informs the processor the interrupt has been handled
-    pub(in crate::idt)
-    fn aknowledge_interrupt();
 
     /// Enables the interrupts
     pub(in crate::idt)
@@ -23,9 +23,6 @@ unsafe extern "C" {
 
     /// Loads the given IDT
     fn load_idt(ptr:*const IDTR);
-
-    pub(in crate::idt)
-    fn read_isr() -> u8;
 }
 
 
@@ -151,6 +148,21 @@ impl InterruptFrame {
     fn error_code(&self) -> u64 {
         self.errcode
     }
+
+    pub(in crate::idt)
+    fn rip(&self) -> u64 {
+        self.rip
+    }
+
+    pub(in crate::idt)
+    fn cs(&self) -> u64 {
+        self.cs
+    }
+
+    pub(in crate::idt)
+    fn rsp(&self) -> u64 {
+        self.rsp
+    }
 }
 
 
@@ -214,9 +226,11 @@ fn init_isr_callbacks() {
     interrupts_callbacks[19] = isr19;
     interrupts_callbacks[20] = isr20;
     interrupts_callbacks[21] = isr21;
-    interrupts_callbacks[32] = isr32;
-    interrupts_callbacks[33] = isr33;
-    interrupts_callbacks[39] = isr39;
+    interrupts_callbacks[32] = irq0;
+    interrupts_callbacks[33] = irq1;
+    interrupts_callbacks[39] = irq7;
+    interrupts_callbacks[44] = irq12;
+    interrupts_callbacks[47] = irq15;
     interrupts_callbacks[128] = isr128;
 }
 
