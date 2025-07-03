@@ -3,6 +3,7 @@
 use crate::drivers::chips::pic::{
     aknowledge_interrupt_request, read_master_isr, read_slave_isr
 };
+use crate::drivers::chips::ps2 as ps2_controller;
 use crate::idt::idt::InterruptFrame;
 
 
@@ -16,6 +17,7 @@ fn irq0(_:&mut InterruptFrame) {
 /// PS/2 Keyboard Interrupt (MASTER)
 pub(in crate::idt)
 fn irq1(_:&mut InterruptFrame) {
+    ps2_controller::handle_keyboard_interrupt();
     aknowledge_interrupt_request(1);
 }
 
@@ -33,6 +35,7 @@ fn irq7(_:&mut InterruptFrame) {
 /// PS/2 Mouse Interrupt (SLAVE)
 pub(in crate::idt)
 fn irq12(_:&mut InterruptFrame) {
+    ps2_controller::handle_mouse_interrupt();
     aknowledge_interrupt_request(12);
 }
 
