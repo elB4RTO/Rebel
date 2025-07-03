@@ -4,6 +4,7 @@
 mod kernel;
 
 pub(crate) mod cpu;
+pub(crate) mod drivers;
 pub(crate) mod idt;
 pub(crate) mod io;
 pub(crate) mod memory;
