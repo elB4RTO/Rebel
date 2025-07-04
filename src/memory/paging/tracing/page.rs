@@ -832,7 +832,15 @@ impl TracingPage {
         if !self.can_push(&md) {
             return Err(TracingPageError::PushPreconditions);
         }
-        Ok(self.push(md))
+        crate::tty::print("\n### try_push()");
+        let exceeding_md = self.push(md);
+        crate::tty::print("\n### try_push() > exceeding_md = ");
+        match exceeding_md.is_some() {
+            true => crate::tty::print("Some"),
+            false => crate::tty::print("None"),
+        }
+        Ok(exceeding_md)
+        // Ok(self.push(md))
     }
 
     /// Inserts the given [`Metadata`] entry at the first position of the array
@@ -853,6 +861,7 @@ impl TracingPage {
     /// Returns [`Some`] containing a [`Metadata`] entry if the array is full and the last
     /// entry needs to be moved to the next [`TracingPage`], or [`None`] otherwise.
     fn push(&mut self, md:Metadata) -> Option<Metadata> {
+        crate::tty::print("\n### push()");
         if self.is_empty() {
             self.append_unchecked(md);
             return None;
@@ -867,6 +876,11 @@ impl TracingPage {
             false => None,
         };
         self.insert_unchecked(0, md);
+        crate::tty::print("\n### push() > exceeding_md = ");
+        match exceeding_md.is_some() {
+            true => crate::tty::print("Some"),
+            false => crate::tty::print("None"),
+        }
         exceeding_md
     }
 
