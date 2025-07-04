@@ -1,11 +1,5 @@
 
-VM = qemu
-
-ifeq ($(VM),bochs)
 EMULATOR = bochs -q
-else
-EMULATOR = qemu-system-x86_64 -hda disk.img -m 2G -cpu qemu64,pdpe1gb
-endif
 
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -fno-builtin -ffreestanding -fno-stack-protector -fomit-frame-pointer -falign-jumps -falign-functions -falign-labels -falign-loops -mno-red-zone -Wall -Werror -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-cpp
 
@@ -15,6 +9,7 @@ CARGO_TARGET_DIR = build/kernel/x86_64-unknown-none/release
 DEBUG = 0
 
 ifeq ($(DEBUG), 0)
+EMULATOR += -rc bochs_autostart
 CFLAGS += -Os -finline-functions
 else
 CFLAGS += -O0 -g
@@ -38,6 +33,8 @@ MOUNT_DIR = build/mnt
 BOOTLOADER = build/bootloader.bin
 
 KERNEL = build/kernel.bin
+
+ENV = TESTS_DEBUG=$(TESTS_DEBUG)
 
 
 #### PHONY TARGETS ####
@@ -140,7 +137,7 @@ build/kernel.elf: src/kernel.asm
 	nasm -f elf64 $^ -o $@
 
 $(CARGO_TARGET_DIR)/librebel.a:
-	cargo build $(CARGO_FLAGS)
+	$(ENV) cargo build $(CARGO_FLAGS)
 
 build/kernel.o: build/kernel.elf $(CARGO_TARGET_DIR)/librebel.a
 	ld -T src/link.ld $^ -o $@
