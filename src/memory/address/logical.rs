@@ -31,7 +31,8 @@ use crate::memory::paging::*;
 use crate::memory::paging::iterators::*;
 
 
-const HIGHER_HALF           : u64 = 0xFFFF000000000000;
+const CANONICAL_BIT         : u64 = 1 << 47;
+const HIGHER_16_BITS        : u64 = 0b1111111111111111000000000000000000000000000000000000000000000000;
 
 const PML4T_SHIFT           : u64 = 39;
 const PDPT_SHIFT            : u64 = 30;
@@ -175,8 +176,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF008080604070);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000001_000000010_000000011_000000100_000001110000);
+    /// let laddr = LogicalAddress::from(0x0000008080604070);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000001_000000010_000000011_000000100_000001110000);
     /// assert_eq!(laddr.mpl4t_index(), 0b000000001);
     /// ```
     pub(in crate::memory) const
@@ -189,8 +190,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF008080604070);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000001_000000010_000000011_000000100_000001110000);
+    /// let laddr = LogicalAddress::from(0x0000008080604070);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000001_000000010_000000011_000000100_000001110000);
     /// assert_eq!(laddr.mpl4t_index(), 0b000000010);
     /// ```
     pub(in crate::memory) const
@@ -203,8 +204,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF008080604070);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000001_000000010_000000011_000000100_000001110000);
+    /// let laddr = LogicalAddress::from(0x0000008080604070);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000001_000000010_000000011_000000100_000001110000);
     /// assert_eq!(laddr.mpl4t_index(), 0b000000011);
     /// ```
     pub(in crate::memory) const
@@ -217,8 +218,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF008080604070);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000001_000000010_000000011_000000100_000001110000);
+    /// let laddr = LogicalAddress::from(0x0000008080604070);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000001_000000010_000000011_000000100_000001110000);
     /// assert_eq!(laddr.mpl4t_index(), 0b000000100);
     /// ```
     pub(in crate::memory) const
@@ -231,8 +232,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF008080604070);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000001_000000010_000000011_000000100_000001110000);
+    /// let laddr = LogicalAddress::from(0x0000008080604070);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000001_000000010_000000011_000000100_000001110000);
     /// assert_eq!(laddr.mpl4t_index(), 0b000001110000);
     /// ```
     pub(in crate::memory) const
@@ -255,8 +256,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF000000000000).with_mpl4t_index(), 0b000000001);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000001_000000000_000000000_000000000_000000000000);
+    /// let laddr = LogicalAddress::from(0x0000000000000000).with_mpl4t_index(0b000000001);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000001_000000000_000000000_000000000_000000000000);
     /// ```
     pub(in crate::memory) const
     fn with_pml4t_index(mut self, idx:u64) -> Self {
@@ -275,8 +276,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF000000000000).with_pdpt_index(), 0b000000010);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000000_000000010_000000000_000000000_000000000000);
+    /// let laddr = LogicalAddress::from(0x0000000000000000).with_pdpt_index(0b000000010);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000000_000000010_000000000_000000000_000000000000);
     /// ```
     pub(in crate::memory) const
     fn with_pdpt_index(mut self, idx:u64) -> Self {
@@ -295,8 +296,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF000000000000).with_pdt_index(), 0b000000011);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000000_000000000_000000011_000000000_000000000000);
+    /// let laddr = LogicalAddress::from(0x0000000000000000).with_pdt_index(0b000000011);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000000_000000000_000000011_000000000_000000000000);
     /// ```
     pub(in crate::memory) const
     fn with_pdt_index(mut self, idx:u64) -> Self {
@@ -315,8 +316,8 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF000000000000).with_pt_index(), 0b000000100);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000000_000000000_000000000_000000100_000000000000);
+    /// let laddr = LogicalAddress::from(0x0000000000000000).with_pt_index(0b000000100);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000000_000000000_000000000_000000100_000000000000);
     /// ```
     pub(in crate::memory) const
     fn with_pt_index(mut self, idx:u64) -> Self {
@@ -335,12 +336,37 @@ impl LogicalAddress {
     /// ## Example
     ///
     /// ```
-    /// let laddr = LogicalAddress::from(0xFFFF000000000000).with_page_offset(), 0b000001110000);
-    /// assert_eq!(laddr.get(), 0b1111111111111111_000000000_000000000_000000000_000000000_000001110000);
+    /// let laddr = LogicalAddress::from(0x0000000000000000).with_page_offset(0b000001110000);
+    /// assert_eq!(laddr.get(), 0b0000000000000000_000000000_000000000_000000000_000000000_000001110000);
     /// ```
     pub(in crate::memory) const
     fn with_page_offset(mut self, ofs:u64) -> Self {
         self.address |= ofs;
+        self
+    }
+
+    /// Canonicalizes the address
+    ///
+    /// ## Warning
+    ///
+    /// This function does not clean the old bits before adding the new ones
+    /// and thus it shall only be used during the creation of the address and
+    /// *never* against an already existing one
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let laddr1 = LogicalAddress::from(0x0000000000000000).as_canonical();
+    /// assert_eq!(laddr1.get(), 0b0000000000000000_000000000_000000000_000000000_000000000_000000000000);
+    ///
+    /// let laddr2 = LogicalAddress::from(0x0000800000000000).as_canonical();
+    /// assert_eq!(laddr2.get(), 0b1111111111111111_100000000_000000000_000000000_000000000_000000000000);
+    /// ```
+    pub(in crate::memory) const
+    fn as_canonical(mut self) -> Self {
+        if (self.address | CANONICAL_BIT) == CANONICAL_BIT {
+            self.address |= HIGHER_16_BITS;
+        }
         self
     }
 }
@@ -448,7 +474,7 @@ impl Align<PageType> for LogicalAddress {
 impl From<u64> for LogicalAddress {
     fn from(value:u64) -> Self {
         Self {
-            address : value | HIGHER_HALF,
+            address : value,
         }
     }
 }

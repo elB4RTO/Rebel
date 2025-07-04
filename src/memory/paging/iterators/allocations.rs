@@ -90,7 +90,7 @@ impl AllocationsIterator {
             Self::Pdpt(it) => it.build_laddr(laddr),
             Self::Pdt(it) => it.build_laddr(laddr),
             Self::Pt(it) => it.build_laddr(laddr),
-        }
+        }.as_canonical()
     }
 }
 

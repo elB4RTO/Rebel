@@ -29,7 +29,7 @@ memory_guard : AtomicBool = AtomicBool::new(false);
 /// } // <- memory guard un-locked
 /// /* some code */
 /// ```
-pub(super)
+pub(in crate::memory)
 struct Allocator {}
 
 impl Allocator {

@@ -1823,6 +1823,7 @@ impl Cast<PhysicalAddress> for TracingPage {
     fn cast(ptr:PhysicalAddress) -> *const Self {
         ptr.get() as *const Self
     }
+
     /// Casts the memory location pointed to by the given address to a `mut`
     /// pointer to a [`TracingPage`]
     fn cast_mut(ptr:PhysicalAddress) -> *mut Self {
@@ -1836,6 +1837,7 @@ impl Cast<LogicalAddress> for TracingPage {
     fn cast(ptr:LogicalAddress) -> *const Self {
         ptr.get() as *const Self
     }
+
     /// Casts the memory location pointed to by the given address to a `mut`
     /// pointer to a [`TracingPage`]
     fn cast_mut(ptr:LogicalAddress) -> *mut Self {

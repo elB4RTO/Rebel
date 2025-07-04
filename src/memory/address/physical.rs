@@ -46,7 +46,8 @@ impl PhysicalAddress {
                         let offset = self.page_offset(PageType::OneGiB);
                         let laddr = LogicalAddress::from(offset)
                             .with_pml4t_index(pml4t_idx)
-                            .with_pdpt_index(pdpt_idx);
+                            .with_pdpt_index(pdpt_idx)
+                            .as_canonical();
                         return Ok(laddr);
                     }
                     continue;
@@ -65,7 +66,8 @@ impl PhysicalAddress {
                             let laddr = LogicalAddress::from(offset)
                                 .with_pml4t_index(pml4t_idx)
                                 .with_pdpt_index(pdpt_idx)
-                                .with_pdt_index(pdt_idx);
+                                .with_pdt_index(pdt_idx)
+                                .as_canonical();
                             return Ok(laddr);
                         }
                         continue;
@@ -85,7 +87,8 @@ impl PhysicalAddress {
                                 .with_pml4t_index(pml4t_idx)
                                 .with_pdpt_index(pdpt_idx)
                                 .with_pdt_index(pdt_idx)
-                                .with_pt_index(pt_idx);
+                                .with_pt_index(pt_idx)
+                                .as_canonical();
                             return Ok(laddr);
                         }
                     }
@@ -116,7 +119,8 @@ impl PhysicalAddress {
                         let offset = self.page_offset(PageType::OneGiB);
                         let laddr = LogicalAddress::from(offset)
                             .with_pml4t_index(pml4t_idx)
-                            .with_pdpt_index(pdpt_idx);
+                            .with_pdpt_index(pdpt_idx)
+                            .as_canonical();
                         return Ok(laddr);
                     }
                 }
@@ -134,7 +138,8 @@ impl PhysicalAddress {
                             let laddr = LogicalAddress::from(offset)
                                 .with_pml4t_index(pml4t_idx)
                                 .with_pdpt_index(pdpt_idx)
-                                .with_pdt_index(pdt_idx);
+                                .with_pdt_index(pdt_idx)
+                                .as_canonical();
                             return Ok(laddr);
                         }
                     }
@@ -153,7 +158,8 @@ impl PhysicalAddress {
                                 .with_pml4t_index(pml4t_idx)
                                 .with_pdpt_index(pdpt_idx)
                                 .with_pdt_index(pdt_idx)
-                                .with_pt_index(pt_idx);
+                                .with_pt_index(pt_idx)
+                                .as_canonical();
                             return Ok(laddr);
                         }
                     }

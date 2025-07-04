@@ -98,7 +98,7 @@ trait Invalid {
 }
 
 /// Used to initialize something from a memory address
-pub(in crate::memory)
+pub(crate)
 trait Init<P> {
     /// Creates and writes an instance of the object in the memory location
     /// pointed to by `ptr`
@@ -106,7 +106,7 @@ trait Init<P> {
 }
 
 /// Used to cast something from a memory address
-pub(in crate::memory)
+pub(crate)
 trait Cast<P> {
     /// Casts the content of the memory pointed to by `ptr` into an instance
     /// of the object and returns an constant pointer to it
