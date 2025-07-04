@@ -9,13 +9,15 @@ endif
 
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -fno-builtin -ffreestanding -fno-stack-protector -fomit-frame-pointer -falign-jumps -falign-functions -falign-labels -falign-loops -mno-red-zone -Wall -Werror -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-cpp
 
-CARGO_FLAGS = --offline --release
-CARGO_TARGET_DIR = build/kernel/x86_64-unknown-none/release
+CARGO_FLAGS = --offline
+CARGO_TARGET_DIR = build/kernel/x86_64-unknown-none/debug
 
 DEBUG = 0
 
 ifeq ($(DEBUG), 0)
 CFLAGS += -Os -finline-functions
+CARGO_FLAGS += --release
+CARGO_TARGET_DIR = build/kernel/x86_64-unknown-none/release
 else
 CFLAGS += -O0 -g
 endif
