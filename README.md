@@ -1,13 +1,13 @@
 <div align="center">
   <h1>Rebel</h1>
-  <p>An indipendent kernel</p>
+  <b>An indipendent 64-bit kernel</b>
 </div>
 
 <br/><br/>
 
 ## Dependencies
 
-To compile Rust sources, the target `x86_64-unknown-none`  must be available. It can be installed via:
+To compile Rust sources, the target `x86_64-unknown-none`  must be available
 
 ```
 rustup target add x86_64-unknown-none
@@ -41,18 +41,10 @@ make create
 
 #### Run in a virtual machine
 
-At the moment the only supported emulators are `qemu` and `bochs`
+At the moment the only officially supported emulator is `bochs`. Despite that, other emulators can be used as well
 
 ```
 make run
-```
-
-The emulator to use can be choosen by setting the `VM` variable while calling `make`
-
-The default emulator is `qemu`. To run with `bochs`:
-
-```
-make run VM=bochs
 ```
 
 #### Clean up
