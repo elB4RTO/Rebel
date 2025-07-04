@@ -200,6 +200,16 @@ pub(crate) fn print_isize(mut value:isize) {
     print_usize(value as usize);
 }
 
+pub(crate)
+fn print_char(chr:char) {
+    if chr.is_ascii() {
+        let buffer : [u8; 1] = [chr as u8];
+        unsafe {
+            screen_buffer.write(buffer.as_ptr(), 1, FG_WHITE);
+        }
+    }
+}
+
 /// Clears the entire screen
 pub(crate) fn clear() {
     unsafe {
