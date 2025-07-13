@@ -34,63 +34,60 @@ fn run_all_tests() {
     // merge pages
     test::merge_pages();
 
-    let page1 = get_page(0);
-
     // insert an entry on single-page
-    test::insert_entry_empty_page(page1);
-    test::insert_entry(page1);
-    test::insert_entry_full_page(page1);
+    test::insert_entry_empty_page();
+    test::insert_entry();
+    test::insert_entry_full_page();
     // remove an entry on single-page
-    test::remove_entry(page1);
-    test::fail__remove_entry_unexisting(page1);
+    test::remove_entry();
+    test::fail__remove_entry_unexisting();
     // take an entry on single-page
-    test::take_entry(page1);
-    test::fail__take_entry_unexisting(page1);
+    test::take_entry();
+    test::fail__take_entry_unexisting();
     // drop an entry on single-page
-    test::drop_entry(page1);
-    test::fail__drop_entry_unexisting(page1);
+    test::drop_entry();
+    test::fail__drop_entry_unexisting();
     // update an entry on single-page
-    test::update_entry_resize_smaller(page1);
-    test::update_entry_resize_bigger(page1);
-    test::fail__update_entry_resize_unexisting(page1);
+    test::update_entry_resize_smaller();
+    test::update_entry_resize_bigger();
+    test::fail__update_entry_resize_unexisting();
     // query on single-page
-    test::query_relocation_inplace_smaller(page1);
-    test::query_relocation_inplace_bigger_contiguous_free_bigger(page1);
-    test::query_relocation_inplace_bigger_contiguous_free_smaller(page1);
-    test::query_relocation_inplace_bigger_noncontiguous_free(page1);
-    test::query_relocation_inplace_bigger_contiguous_taken(page1);
-    test::fail__query_relocation_inplace_unexisting(page1);
+    test::query_relocation_inplace_smaller();
+    test::query_relocation_inplace_bigger_contiguous_free_bigger();
+    test::query_relocation_inplace_bigger_contiguous_free_smaller();
+    test::query_relocation_inplace_bigger_noncontiguous_free();
+    test::query_relocation_inplace_bigger_contiguous_taken();
+    test::fail__query_relocation_inplace_unexisting();
 
     add_second_page();
-    let page2 = get_page(1);
 
     // insert an entry on multi-page
-    test::insert_entry_first_page(page1, page2);
-    test::insert_entry_second_page_empty(page1, page2);
-    test::insert_entry_second_page_free(page1, page2);
-    test::insert_entry_second_page_taken(page1, page2);
-    test::insert_entry_second_page_multiple(page1, page2);
+    test::insert_entry_first_page();
+    test::insert_entry_second_page_empty();
+    test::insert_entry_second_page_free();
+    test::insert_entry_second_page_taken();
+    test::insert_entry_second_page_multiple();
     // remove an entry on multi-page
-    test::remove_entry_first_page(page1, page2);
-    test::remove_entry_partially_first_page(page1, page2);
-    test::remove_entry_first_page_last_with_reminder(page1, page2);
-    test::remove_entry_second_page(page1, page2);
+    test::remove_entry_first_page();
+    test::remove_entry_partially_first_page();
+    test::remove_entry_first_page_last_with_reminder();
+    test::remove_entry_second_page();
     // take an entry on multi-page
-    test::take_entry_partially_first_page(page1, page2);
-    test::take_entry_entirely_second_page(page1, page2);
+    test::take_entry_partially_first_page();
+    test::take_entry_entirely_second_page();
     // drop an entry on multi-page
-    test::drop_entry_first_page(page1, page2);
-    test::drop_entry_second_page(page1, page2);
+    test::drop_entry_first_page();
+    test::drop_entry_second_page();
     // update an entry on multi-page
-    test::update_entry_resize_smaller_first_page(page1, page2);
-    test::update_entry_resize_bigger_first_page(page1, page2);
-    test::update_entry_resize_smaller_second_page(page1, page2);
+    test::update_entry_resize_smaller_first_page();
+    test::update_entry_resize_bigger_first_page();
+    test::update_entry_resize_smaller_second_page();
     //query on multi-page
-    test::query_relocation_inplace_first_page(page1, page2);
-    test::query_relocation_inplace_second_page(page1, page2);
+    test::query_relocation_inplace_first_page();
+    test::query_relocation_inplace_second_page();
 
     remove_second_page();
-    clear_page(page1);
+    clear_page(get_page(0));
 }
 
 mod test {
@@ -343,31 +340,29 @@ pub(super) fn merge_pages() {
     // Given
     let _ = create::create_tracing_page(OWNER).get_or_panic();
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    let first_page = get_page(0);
-    clear_page(first_page);
-    first_page.append_unchecked(Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000));
-    first_page.append_unchecked(Metadata::new_taken(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x1000));
-    first_page.append_unchecked(Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x1000));
-    assume!(first_page.size() == 3, "page pre-conditions");
-    let second_page = get_page(1);
-    clear_page(second_page);
-    second_page.append_unchecked(Metadata::new_free(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x1000));
-    second_page.append_unchecked(Metadata::new_taken(PhysicalAddress::from(0x5000), LogicalAddress::from(0xE000), 0x1000));
-    assume!(second_page.size() == 2, "page pre-conditions");
+    clear_page(get_page(0));
+    get_page(0).append_unchecked(Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000));
+    get_page(0).append_unchecked(Metadata::new_taken(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x1000));
+    get_page(0).append_unchecked(Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x1000));
+    assume!(get_page(0).size() == 3, "page pre-conditions");
+    clear_page(get_page(1));
+    get_page(1).append_unchecked(Metadata::new_free(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x1000));
+    get_page(1).append_unchecked(Metadata::new_taken(PhysicalAddress::from(0x5000), LogicalAddress::from(0xE000), 0x1000));
+    assume!(get_page(1).size() == 2, "page pre-conditions");
     // When / Then
     check!(merge::merge_tracing_pages(OWNER).is_ok(), "failed to merge");
     // Then
     check!(count_tracing_pages() == 2, "pages count is different");
-    check!(first_page.size() == 4, "first page size is different");
-    check!(second_page.is_empty(), "second page size is different");
+    check!(get_page(0).size() == 4, "first page size is different");
+    check!(get_page(1).is_empty(), "second page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    check!(compare_metadata(&first_page.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x1000);
-    check!(compare_metadata(&first_page.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x2000);
-    check!(compare_metadata(&first_page.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x5000), LogicalAddress::from(0xE000), 0x1000);
-    check!(compare_metadata(&first_page.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     delete::delete_tracing_page(get_page_paddr(1), OWNER).ok_or_panic();
     test_passed!();
     wait!();
@@ -387,18 +382,18 @@ pub(super) fn merge_pages() {
 ///
 /// - The entry is inserted successfully
 /// - No new page is created
-pub(super) fn insert_entry_empty_page(page1:&mut TracingPage) {
+pub(super) fn insert_entry_empty_page() {
     scenario!("Insert an entry in an empty page");
     // Given
-    clear_page(page1);
-    assume!(page1.is_empty() == true, "page pre-conditions");
+    clear_page(get_page(0));
+    assume!(get_page(0).is_empty() == true, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.size() == 1, "page size is different");
-    check!(compare_metadata(&page1.entry_at(0), &new_md), "first entry is different");
+    check!(get_page(0).size() == 1, "page size is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &new_md), "first entry is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -418,28 +413,28 @@ pub(super) fn insert_entry_empty_page(page1:&mut TracingPage) {
 ///
 /// - The entry is inserted successfully
 /// - No new page is created
-pub(super) fn insert_entry(page1:&mut TracingPage) {
+pub(super) fn insert_entry() {
     scenario!("Insert an entry in a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0x2800), LogicalAddress::from(0xB800), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.size() == 5, "page size is different");
+    check!(get_page(0).size() == 5, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = new_md;
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(4), &expected_md), "entry 4 is different");
+    check!(compare_metadata(&get_page(0).entry_at(4), &expected_md), "entry 4 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -461,27 +456,26 @@ pub(super) fn insert_entry(page1:&mut TracingPage) {
 /// - The page is updated correctly
 /// - A new page is created
 /// - The exceeding entry is stored in the new page
-pub(super) fn insert_entry_full_page(page1:&mut TracingPage) {
+pub(super) fn insert_entry_full_page() {
     scenario!("Insert an entry in a full page");
     // Given
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0xF00), LogicalAddress::from(0x9F00), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
     check!(count_tracing_pages() == 2, "pages count is different");
-    check!(page1.is_full(), "first page size is different");
+    check!(get_page(0).is_full(), "first page size is different");
     let expected_md = new_md;
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of first page is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of first page is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000D00), LogicalAddress::from(0x1009D00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of first page is different");
-    let page2 = get_page(1);
-    check!(page2.size() == 1, "second page size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of first page is different");
+    check!(get_page(1).size() == 1, "second page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "first entry of second page is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "first entry of second page is different");
     delete::delete_tracing_page(get_page_paddr(1), OWNER).ok_or_panic();
     test_passed!();
     wait!();
@@ -502,23 +496,23 @@ pub(super) fn insert_entry_full_page(page1:&mut TracingPage) {
 /// - The entry is removed successfully
 /// - The page is updated correctly
 /// - No new page is created
-pub(super) fn remove_entry(page1:&mut TracingPage) {
+pub(super) fn remove_entry() {
     scenario!("Remove an entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(remove::remove_space(0x3000.into(), 0x100, OWNER).is_ok(), "failed to remove");
     // Then
-    check!(page1.size() == 3, "page size is different");
+    check!(get_page(0).size() == 3, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -539,25 +533,25 @@ pub(super) fn remove_entry(page1:&mut TracingPage) {
 /// - The request is refused
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn fail__remove_entry_unexisting(page1:&mut TracingPage) {
+pub(super) fn fail__remove_entry_unexisting() {
     fail_scenario!("Remove an unexisting entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(remove::remove_space(0x5000.into(), 0x100, OWNER).is_err(), "result is Ok");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -577,25 +571,25 @@ pub(super) fn fail__remove_entry_unexisting(page1:&mut TracingPage) {
 ///
 /// - The entry is updated correctly
 /// - No new page is created
-pub(super) fn take_entry(page1:&mut TracingPage) {
+pub(super) fn take_entry() {
     scenario!("Take an entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(take::take_available_space(0x3000.into(), 0x100, OWNER).is_ok(), "failed to take");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -616,25 +610,25 @@ pub(super) fn take_entry(page1:&mut TracingPage) {
 /// - The request is refused
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn fail__take_entry_unexisting(page1:&mut TracingPage) {
+pub(super) fn fail__take_entry_unexisting() {
     fail_scenario!("Take an unexisting entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(take::take_available_space(0x5000.into(), 0x100, OWNER).is_err(), "result is Ok");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -654,25 +648,25 @@ pub(super) fn fail__take_entry_unexisting(page1:&mut TracingPage) {
 ///
 /// - The entry is updated correctly
 /// - No new page is created
-pub(super) fn drop_entry(page1:&mut TracingPage) {
+pub(super) fn drop_entry() {
     scenario!("Drop an entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(drop::drop_occupied_space(0x4000.into(), OWNER).is_ok(), "failed to take");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -693,25 +687,25 @@ pub(super) fn drop_entry(page1:&mut TracingPage) {
 /// - The request is refused
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn fail__drop_entry_unexisting(page1:&mut TracingPage) {
+pub(super) fn fail__drop_entry_unexisting() {
     fail_scenario!("Drop an unexisting entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(drop::drop_occupied_space(0x5000.into(), OWNER).is_err(), "result is Ok");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -732,27 +726,27 @@ pub(super) fn fail__drop_entry_unexisting(page1:&mut TracingPage) {
 /// - The entry is resized successfully
 /// - The page is updated correctly
 /// - No new page is created
-pub(super) fn update_entry_resize_smaller(page1:&mut TracingPage) {
+pub(super) fn update_entry_resize_smaller() {
     scenario!("Resize an entry from a page to a smaller size");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(update::resize(0x4000.into(), 0x80, OWNER).is_ok(), "failed to resize");
     // Then
-    check!(page1.size() == 5, "page size is different");
+    check!(get_page(0).size() == 5, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x80);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x4080), LogicalAddress::from(0xD080), 0x80);
-    check!(compare_metadata(&page1.entry_at(4), &expected_md), "entry 4 is different");
+    check!(compare_metadata(&get_page(0).entry_at(4), &expected_md), "entry 4 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -773,24 +767,24 @@ pub(super) fn update_entry_resize_smaller(page1:&mut TracingPage) {
 /// - The entry is resized successfully
 /// - The page is updated correctly
 /// - No new page is created
-pub(super) fn update_entry_resize_bigger(page1:&mut TracingPage) {
+pub(super) fn update_entry_resize_bigger() {
     scenario!("Resize an entry from a page to a bigger size");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    *page1.entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    *get_page(0).entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(update::resize(0x1000.into(), 0x1100, OWNER).is_ok(), "failed to resize");
     // Then
-    check!(page1.size() == 3, "page size is different");
+    check!(get_page(0).size() == 3, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -811,25 +805,25 @@ pub(super) fn update_entry_resize_bigger(page1:&mut TracingPage) {
 /// - The request is refused
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn fail__update_entry_resize_unexisting(page1:&mut TracingPage) {
+pub(super) fn fail__update_entry_resize_unexisting() {
     fail_scenario!("Resize an unexisting entry from a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(update::resize(0x5000.into(), 0x100, OWNER).is_err(), "result is Ok");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -850,27 +844,27 @@ pub(super) fn fail__update_entry_resize_unexisting(page1:&mut TracingPage) {
 /// - The request is processed successfully
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_smaller(page1:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_smaller() {
     scenario!("Query relocation inplace to a smaller size on a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0xD000.into(), 0x80, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == true, "query result is different");
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -892,28 +886,28 @@ pub(super) fn query_relocation_inplace_smaller(page1:&mut TracingPage) {
 /// - The request is processed successfully
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_bigger_contiguous_free_bigger(page1:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_bigger_contiguous_free_bigger() {
     scenario!("Query relocation inplace to a bigger size on a page (contiguous free bigger)");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    *page1.entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    *get_page(0).entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0xA000.into(), 0x1080, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == true, "query result is different");
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -935,28 +929,28 @@ pub(super) fn query_relocation_inplace_bigger_contiguous_free_bigger(page1:&mut 
 /// - The request is processed successfully
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_bigger_contiguous_free_smaller(page1:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_bigger_contiguous_free_smaller() {
     scenario!("Query relocation inplace to a bigger size on a page (contiguous free smaller)");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    *page1.entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    *get_page(0).entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0xA000.into(), 0x1200, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == false, "query result is different");
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -978,27 +972,27 @@ pub(super) fn query_relocation_inplace_bigger_contiguous_free_smaller(page1:&mut
 /// - The request is processed successfully
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_bigger_noncontiguous_free(page1:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_bigger_noncontiguous_free() {
     scenario!("Query relocation inplace to a bigger size on a page (non-contiguous free)");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0xA000.into(), 0x1080, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == false, "query result is different");
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1020,29 +1014,29 @@ pub(super) fn query_relocation_inplace_bigger_noncontiguous_free(page1:&mut Trac
 /// - The request is processed successfully
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_bigger_contiguous_taken(page1:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_bigger_contiguous_taken() {
     scenario!("Query relocation inplace to a bigger size on a page (contiguous taken)");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    *page1.entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    page1.entry_at_mut(1).set_taken();
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    *get_page(0).entry_at_mut(0) = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
+    get_page(0).entry_at_mut(1).set_taken();
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0xA000.into(), 0x1080, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == false, "query result is different");
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x1000);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1064,25 +1058,25 @@ pub(super) fn query_relocation_inplace_bigger_contiguous_taken(page1:&mut Tracin
 /// - The request is refused
 /// - The page is not modified
 /// - No new page is created
-pub(super) fn fail__query_relocation_inplace_unexisting(page1:&mut TracingPage) {
+pub(super) fn fail__query_relocation_inplace_unexisting() {
     fail_scenario!("Query relocation inplace of an unexisting entry of a page");
     // Given
-    clear_page(page1);
-    add_entries(page1);
-    assume!(page1.size() == 4, "page pre-conditions");
+    clear_page(get_page(0));
+    add_entries(get_page(0));
+    assume!(get_page(0).size() == 4, "page pre-conditions");
     assume!(count_tracing_pages() == 1, "tracing pre-conditions");
     // When / Then
     check!(query::can_relocate_inplace(0xE000.into(), 0x80, OWNER).is_err(), "result is Ok");
     // Then
-    check!(page1.size() == 4, "page size is different");
+    check!(get_page(0).size() == 4, "page size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x2000), LogicalAddress::from(0xB000), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x3000), LogicalAddress::from(0xC000), 0x100);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x4000), LogicalAddress::from(0xD000), 0x100);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 is different");
     assume!(count_tracing_pages() == 1, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1107,30 +1101,30 @@ pub(super) fn fail__query_relocation_inplace_unexisting(page1:&mut TracingPage) 
 /// - The exceeding entry from the first page is moved to the second page
 /// - The second page is updated correctly
 /// - No new page is created
-pub(super) fn insert_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn insert_entry_first_page() {
     scenario!("Insert an entry (multi-page, first)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0xF00), LogicalAddress::from(0x9F00), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = new_md;
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000D00), LogicalAddress::from(0x1009D00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 5, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 5, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "first entry of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "first entry of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(4), &expected_md), "last entry of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(4), &expected_md), "last entry of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1153,25 +1147,25 @@ pub(super) fn insert_entry_first_page(page1:&mut TracingPage, page2:&mut Tracing
 /// - The entry is inserted successfully in the second page
 /// - The first page is not modified
 /// - No new page is created
-pub(super) fn insert_entry_second_page_empty(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn insert_entry_second_page_empty() {
     scenario!("Insert an entry (multi-page, second empty)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    assume!(page2.is_empty(), "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    assume!(get_page(1).is_empty(), "get_page(1) pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 1, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 1, "page 2 size is different");
     let expected_md = new_md;
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "first entry of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "first entry of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1194,26 +1188,26 @@ pub(super) fn insert_entry_second_page_empty(page1:&mut TracingPage, page2:&mut 
 /// - The entry is merged with the entry in the second page
 /// - The first page is not modified
 /// - No new page is created
-pub(super) fn insert_entry_second_page_free(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn insert_entry_second_page_free() {
     scenario!("Insert an entry (multi-page, second free)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_contiguous_free_entry(page2);
-    assume!(page2.size() == 1, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_contiguous_free_entry(get_page(1));
+    assume!(get_page(1).size() == 1, "get_page(1) pre-conditions");
     // When / Then
     let new_md = Metadata::new_free(PhysicalAddress::from(0x1001000), LogicalAddress::from(0x100A000), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 1, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 1, "page 2 size is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x200);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "first entry of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "first entry of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1236,28 +1230,28 @@ pub(super) fn insert_entry_second_page_free(page1:&mut TracingPage, page2:&mut T
 /// - The entry is inserted successfully in the second page
 /// - The first page is not modified
 /// - No new page is created
-pub(super) fn insert_entry_second_page_taken(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn insert_entry_second_page_taken() {
     scenario!("Insert an entry (multi-page, second taken)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_contiguous_taken_entry(page2);
-    assume!(page2.size() == 1, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_contiguous_taken_entry(get_page(1));
+    assume!(get_page(1).size() == 1, "get_page(1) pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0x1001000), LogicalAddress::from(0x100A000), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 2, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 2, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "first entry of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "first entry of page 2 is different");
     let expected_md = new_md;
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "second entry of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "second entry of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1281,34 +1275,34 @@ pub(super) fn insert_entry_second_page_taken(page1:&mut TracingPage, page2:&mut 
 /// - The first page is not modified
 /// - The second page is updated correctly
 /// - No new page is created
-pub(super) fn insert_entry_second_page_multiple(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn insert_entry_second_page_multiple() {
     scenario!("Insert an entry (multi-page, second multiple)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     let new_md = Metadata::new_taken(PhysicalAddress::from(0x1001000), LogicalAddress::from(0x100A000), 0x100);
     check!(insert::insert_entry(new_md, OWNER).is_ok(), "failed to insert");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 5, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 5, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = new_md;
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(4), &expected_md), "entry 4 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(4), &expected_md), "entry 4 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1330,31 +1324,31 @@ pub(super) fn insert_entry_second_page_multiple(page1:&mut TracingPage, page2:&m
 /// - The entry is removed successfully
 /// - The pages are merged
 /// - No page is created or deleted
-pub(super) fn remove_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn remove_entry_first_page() {
     scenario!("Remove an entry (multi-page, first entirely)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(remove::remove_space(0x1000.into(), 0x100, OWNER).is_ok(), "failed to remove");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1100), LogicalAddress::from(0xA100), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 3, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 3, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1379,39 +1373,39 @@ pub(super) fn remove_entry_first_page(page1:&mut TracingPage, page2:&mut Tracing
 /// - The exceeding entry from the first page is moved to the second page
 /// - The second page is updated correctly
 /// - No new page is created
-pub(super) fn remove_entry_partially_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn remove_entry_partially_first_page() {
     scenario!("Remove an entry (multi-page, first partially)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_alternate(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_alternate(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(remove::remove_space(0x1140.into(), 0x80, OWNER).is_ok(), "failed to remove");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 of page 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1100), LogicalAddress::from(0xA100), 0x40);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 of page 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x11C0), LogicalAddress::from(0xA1C0), 0x40);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 of page 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1000D00), LogicalAddress::from(0x1009D00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 5, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 5, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(4), &expected_md), "entry 4 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(4), &expected_md), "entry 4 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1437,29 +1431,29 @@ pub(super) fn remove_entry_partially_first_page(page1:&mut TracingPage, page2:&m
 /// - The second page is updated correctly
 /// - The pages are merged
 /// - No new page is created
-pub(super) fn remove_entry_first_page_last_with_reminder(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn remove_entry_first_page_last_with_reminder() {
     scenario!("Remove an entry (multi-page, first reminder)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(remove::remove_space(0x1000E00.into(), 0x200, OWNER).is_ok(), "failed to remove");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 2, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 2, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1482,29 +1476,29 @@ pub(super) fn remove_entry_first_page_last_with_reminder(page1:&mut TracingPage,
 /// - The first page is not modified
 /// - The second page is updated correctly
 /// - No page is created or deleted
-pub(super) fn remove_entry_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn remove_entry_second_page() {
     scenario!("Remove an entry (multi-page, second entirely)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(remove::remove_space(0x1001100.into(), 0x100, OWNER).is_ok(), "failed to remove");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 3, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 3, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1528,43 +1522,43 @@ pub(super) fn remove_entry_second_page(page1:&mut TracingPage, page2:&mut Tracin
 /// - Two new entries are created with the left-over size
 /// - The exceeding entries from the first page are moved to the second page
 /// - No new page is created
-pub(super) fn take_entry_partially_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn take_entry_partially_first_page() {
     scenario!("Take an entry (multi-page, first partially)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_alternate(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_alternate(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(take::take_available_space(0x1140.into(), 0x80, OWNER).is_ok(), "failed to take");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 of page 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1100), LogicalAddress::from(0xA100), 0x40);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1140), LogicalAddress::from(0xA140), 0x80);
-    check!(compare_metadata(&page1.entry_at(2), &expected_md), "entry 2 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(2), &expected_md), "entry 2 of page 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x11C0), LogicalAddress::from(0xA1C0), 0x40);
-    check!(compare_metadata(&page1.entry_at(3), &expected_md), "entry 3 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(3), &expected_md), "entry 3 of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000C00), LogicalAddress::from(0x1009C00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 6, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 6, "page 2 size is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1000D00), LogicalAddress::from(0x1009D00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(4), &expected_md), "entry 4 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(4), &expected_md), "entry 4 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(5), &expected_md), "entry 5 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(5), &expected_md), "entry 5 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1587,32 +1581,32 @@ pub(super) fn take_entry_partially_first_page(page1:&mut TracingPage, page2:&mut
 /// - The first page is not modified
 /// - The second page is updated correctly
 /// - No page is created or deleted
-pub(super) fn take_entry_entirely_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn take_entry_entirely_second_page() {
     scenario!("Take an entry (multi-page, second entirely)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    page2.entry_at_mut(0).set_free();
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    get_page(1).entry_at_mut(0).set_free();
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(take::take_available_space(0x1000F00.into(), 0x100, OWNER).is_ok(), "failed to take");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 4, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 4, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1634,31 +1628,31 @@ pub(super) fn take_entry_entirely_second_page(page1:&mut TracingPage, page2:&mut
 /// - The entry is updated correctly
 /// - The second page is not modified
 /// - No new page is created
-pub(super) fn drop_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn drop_entry_first_page() {
     scenario!("Drop an entry (multi-page, first)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(drop::drop_occupied_space(0x1000.into(), OWNER).is_ok(), "failed to drop");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
-    check!(page2.size() == 4, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(get_page(1).size() == 4, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1681,33 +1675,33 @@ pub(super) fn drop_entry_first_page(page1:&mut TracingPage, page2:&mut TracingPa
 /// - The first page is not modified
 /// - The second page is updated correctly
 /// - No page is created or deleted
-pub(super) fn drop_entry_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn drop_entry_second_page() {
     scenario!("Drop an entry (multi-page, second)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(drop::drop_occupied_space(0x1001100.into(), OWNER).is_ok(), "failed to drop");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 4, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 4, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1732,37 +1726,37 @@ pub(super) fn drop_entry_second_page(page1:&mut TracingPage, page2:&mut TracingP
 /// - The exceeding entry from the first page is moved correctly to the second page
 /// - The second page is updated correctly
 /// - No new page is created
-pub(super) fn update_entry_resize_smaller_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn update_entry_resize_smaller_first_page() {
     scenario!("Resize an entry to a smaller size (multi-page, first)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(update::resize(0x1000.into(), 0x80, OWNER).is_ok(), "failed to resize");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x80);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 of page 1 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1080), LogicalAddress::from(0xA080), 0x80);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000D00), LogicalAddress::from(0x1009D00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 5, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 5, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(4), &expected_md), "entry 4 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(4), &expected_md), "entry 4 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1787,33 +1781,33 @@ pub(super) fn update_entry_resize_smaller_first_page(page1:&mut TracingPage, pag
 /// - The first page is updated correctly
 /// - The pages are merged
 /// - No new page is created
-pub(super) fn update_entry_resize_bigger_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn update_entry_resize_bigger_first_page() {
     scenario!("Resize an entry to a bigger size (multi-page, first)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_alternate(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_alternate(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(update::resize(0x1000.into(), 0x200, OWNER).is_ok(), "failed to resize");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x200);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "entry 0 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "entry 0 of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1200), LogicalAddress::from(0xA200), 0x100);
-    check!(compare_metadata(&page1.entry_at(1), &expected_md), "entry 1 of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(1), &expected_md), "entry 1 of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 3, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 3, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1837,35 +1831,35 @@ pub(super) fn update_entry_resize_bigger_first_page(page1:&mut TracingPage, page
 /// - The first page is not modified
 /// - The second page is updated correctly
 /// - No new page is created
-pub(super) fn update_entry_resize_smaller_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn update_entry_resize_smaller_second_page() {
     scenario!("Resize an entry to a smaller size (multi-page, second)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When / Then
     check!(update::resize(0x1001100.into(), 0x80, OWNER).is_ok(), "failed to resize");
     // Then
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 5, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 5, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x80);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_free(PhysicalAddress::from(0x1001180), LogicalAddress::from(0x100A180), 0x80);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(4), &expected_md), "entry 4 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(4), &expected_md), "entry 4 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1888,35 +1882,35 @@ pub(super) fn update_entry_resize_smaller_second_page(page1:&mut TracingPage, pa
 /// - The request is processed successfully
 /// - The pages are not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_first_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_first_page() {
     scenario!("Query relocation inplace to a smaller size (multi-page, first)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0xA000.into(), 0x80, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == true, "query result is different");
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 4, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 4, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();
@@ -1939,35 +1933,35 @@ pub(super) fn query_relocation_inplace_first_page(page1:&mut TracingPage, page2:
 /// - The request is processed successfully
 /// - The pages are not modified
 /// - No new page is created
-pub(super) fn query_relocation_inplace_second_page(page1:&mut TracingPage, page2:&mut TracingPage) {
+pub(super) fn query_relocation_inplace_second_page() {
     scenario!("Query relocation inplace to a smaller size (multi-page, second)");
     // Given
     assume!(count_tracing_pages() == 2, "tracing pre-conditions");
-    clear_page(page1);
-    fill_page_taken(page1);
-    assume!(page1.is_full(), "page1 pre-conditions");
-    clear_page(page2);
-    add_multiple_entries(page2);
-    assume!(page2.size() == 4, "page2 pre-conditions");
+    clear_page(get_page(0));
+    fill_page_taken(get_page(0));
+    assume!(get_page(0).is_full(), "get_page(0) pre-conditions");
+    clear_page(get_page(1));
+    add_multiple_entries(get_page(1));
+    assume!(get_page(1).size() == 4, "get_page(1) pre-conditions");
     // When
     let query_result = query::can_relocate_inplace(0x1009F00.into(), 0x80, OWNER);
     // Then
     check!(query_result.is_ok(), "failed to query");
     check!(query_result.get_or_panic().0 == true, "query result is different");
-    check!(page1.is_full(), "page 1 size is different");
+    check!(get_page(0).is_full(), "page 1 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000), LogicalAddress::from(0xA000), 0x100);
-    check!(compare_metadata(&page1.entry_at(0), &expected_md), "first entry of page 1 is different");
+    check!(compare_metadata(&get_page(0).entry_at(0), &expected_md), "first entry of page 1 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000E00), LogicalAddress::from(0x1009E00), 0x100);
-    check!(compare_metadata(&page1.entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
-    check!(page2.size() == 4, "page 2 size is different");
+    check!(compare_metadata(&get_page(0).entry_at(METADATA_ARRAY_SIZE-1), &expected_md), "last entry of page 1 is different");
+    check!(get_page(1).size() == 4, "page 2 size is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1000F00), LogicalAddress::from(0x1009F00), 0x100);
-    check!(compare_metadata(&page2.entry_at(0), &expected_md), "entry 0 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(0), &expected_md), "entry 0 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001100), LogicalAddress::from(0x100A100), 0x100);
-    check!(compare_metadata(&page2.entry_at(1), &expected_md), "entry 1 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(1), &expected_md), "entry 1 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001200), LogicalAddress::from(0x100A200), 0x100);
-    check!(compare_metadata(&page2.entry_at(2), &expected_md), "entry 2 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(2), &expected_md), "entry 2 of page 2 is different");
     let expected_md = Metadata::new_taken(PhysicalAddress::from(0x1001400), LogicalAddress::from(0x100A400), 0x100);
-    check!(compare_metadata(&page2.entry_at(3), &expected_md), "entry 3 of page 2 is different");
+    check!(compare_metadata(&get_page(1).entry_at(3), &expected_md), "entry 3 of page 2 is different");
     assume!(count_tracing_pages() == 2, "tracing post-conditions");
     test_passed!();
     wait!();

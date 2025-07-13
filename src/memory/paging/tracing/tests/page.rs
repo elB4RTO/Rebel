@@ -1228,7 +1228,7 @@ pub(super) fn extract_entry_middle(page:&mut TracingPage) {
 /// - The entry is extracted succesfully
 /// - The page is updated correctly
 pub(super) fn extract_entry_last(page:&mut TracingPage) {
-    scenario!("Try extract an entry (first)");
+    scenario!("Try extract an entry (last)");
     // Given
     clear_page(page);
     assume!(page.is_empty() == true, "page pre-conditions");
