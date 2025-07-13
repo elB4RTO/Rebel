@@ -228,22 +228,6 @@ impl Address for PhysicalAddress {
     fn as_ptr_mut<T>(&self) -> *mut T {
         self.address as *mut T
     }
-
-    unsafe fn as_ref<T>(&self) -> &T {
-        &*self.as_ptr::<T>()
-    }
-
-    unsafe fn as_ref_mut<T>(&self) -> &mut T {
-        &mut*self.as_ptr_mut::<T>()
-    }
-
-    unsafe fn read<T>(&self) -> T {
-        core::ptr::read(self.as_ptr::<T>())
-    }
-
-    unsafe fn write<T>(&self, value:T) {
-        core::ptr::write(self.as_ptr_mut::<T>(), value)
-    }
 }
 
 impl Align<u64> for PhysicalAddress {

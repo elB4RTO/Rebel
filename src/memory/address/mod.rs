@@ -34,50 +34,58 @@ trait Address : Sized + From<u64> + Add<u64> + AddAssign<u64> + Sub<u64> + SubAs
     ///
     /// ## Warning
     ///
-    /// This function does not check whether the underlying address is valid
-    unsafe fn as_ref<T>(&self) -> &T;
+    /// This function does not check whether the underlying address is valid.
+    unsafe fn as_ref<T>(&self) -> &T {
+        &*self.as_ptr::<T>()
+    }
 
     /// Dereferences the wrapped address and returns the data it points to as `mut` reference
     ///
     /// ## Warning
     ///
-    /// This function does not check whether the underlying address is valid
-    unsafe fn as_ref_mut<T>(&self) -> &mut T;
+    /// This function does not check whether the underlying address is valid.
+    unsafe fn as_ref_mut<T>(&self) -> &mut T {
+        &mut*self.as_ptr_mut::<T>()
+    }
 
     /// Dereferences the wrapped address and returns a copy of the data it points to
     ///
     /// ## Warning
     ///
-    /// This function does not check whether the underlying address is valid
-    unsafe fn read<T>(&self) -> T;
+    /// This function does not check whether the underlying address is valid.
+    /// Moreover, see [`core::ptr::read`] for safety concerns.
+    unsafe fn read<T:Copy>(&self) -> T {
+        self.as_ptr::<T>().read()
+    }
 
-    /// Dereferences the wrapped address and writes
+    /// Dereferences the wrapped address and overwrites the data it points to
     ///
     /// ## Warning
     ///
-    /// This function does not check whether the underlying address is valid
-    unsafe fn write<T>(&self, value:T);
+    /// This function does not check whether the underlying address is valid.
+    /// Moreover, see [`core::ptr::write`] for safety concerns.
+    unsafe fn write<T>(&self, value:T) {
+        self.as_ptr_mut::<T>().write(value);
+    }
 }
 
 
 pub(in crate::memory)
 trait Align<B:Sized + Into<u64>> {
-
     /// Checks whether the address is aligned with the given size
     ///
     /// ## Example
     ///
     /// ```
     /// let addr = address_from(0x10000);
-    /// assert!(addr.is_aligned(01000));
-    /// assert!(!addr.is_aligned(0x200000));
+    /// assert_eq!(addr.is_aligned(0x1000), true);
+    /// assert_eq!(addr.is_aligned(0x20000), false);
     /// ```
     fn is_aligned(&self, bound:B) -> bool;
 
     /// Aligns the address to the lower bound of the given size
     ///
-    /// If the address is already aligned, a call to this function has
-    /// no effect
+    /// If the address is already aligned, a call to this function has no effect
     ///
     /// ## Example
     ///
@@ -90,13 +98,13 @@ trait Align<B:Sized + Into<u64>> {
     /// ```
     fn align_to_lower(&mut self, bound:B);
 
-    /// As [`Align::align_to_lower()`], but takes ownership of self and returns it
+    /// As [`Align::align_to_lower()`], but takes ownership of `self` and returns it
     ///
     /// ## Example
     ///
     /// ```
-    /// let addr = address_from(0x201000)
-    ///     .aligned_to_lower(0x1000);
+    /// let addr = address_from(0x201000);
+    /// let addr = addr.aligned_to_lower(0x1000);
     /// assert_eq!(addr, address_from(0x201000));
     /// let addr = addr.aligned_to_lower(0x200000);
     /// assert_eq!(addr, address_from(0x200000));
@@ -105,8 +113,7 @@ trait Align<B:Sized + Into<u64>> {
 
     /// Aligns the address to the upper bound of the given size
     ///
-    /// If the address is already aligned, a call to this function has
-    /// no effect
+    /// If the address is already aligned, a call to this function has no effect
     ///
     /// ## Example
     ///
@@ -119,13 +126,13 @@ trait Align<B:Sized + Into<u64>> {
     /// ```
     fn align_to_upper(&mut self, bound:B);
 
-    /// As [`Align::align_to_upper()`], but takes ownership of self and returns it
+    /// As [`Align::align_to_upper()`], but takes ownership of `self` and returns it
     ///
     /// ## Example
     ///
     /// ```
-    /// let addr = address_from(0x201000)
-    ///     .aligned_to_upper(0x1000);
+    /// let addr = address_from(0x201000);
+    /// let addr = addr.aligned_to_upper(0x1000);
     /// assert_eq!(addr, address_from(0x201000));
     /// let addr = addr.aligned_to_upper(0x200000);
     /// assert_eq!(addr, address_from(0x400000));
@@ -148,13 +155,15 @@ trait Align<B:Sized + Into<u64>> {
     /// ```
     fn force_align_to_upper(&mut self, bound:B);
 
-    /// As [`Align::force_align_to_upper()`], but takes ownership of self and returns it
+    /// As [`Align::force_align_to_upper()`], but takes ownership of `self` and returns it
     ///
     /// ## Example
     ///
     /// ```
-    /// let mut addr = address_from(0x200000);
-    /// addr.force_aligned_to_upper(0x200000);
+    /// let addr = address_from(0x200000);
+    /// let addr = addr.aligned_to_upper(0x200000);
+    /// assert_eq!(addr, address_from(0x200000));
+    /// let addr = addr.force_aligned_to_upper(0x200000);
     /// assert_eq!(addr, address_from(0x400000));
     /// ```
     fn force_aligned_to_upper(self, bound:B) -> Self;

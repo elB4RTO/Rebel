@@ -26,27 +26,27 @@ use crate::panic::*;
 use core::arch::global_asm;
 
 
-// Sizes in Bytes of 1 GiB
+// Size in Bytes of 1 GiB
 #[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_1GiB   : u64 = 0x40000000;
 
-// Sizes in Bytes of 2 MiB
+// Size in Bytes of 2 MiB
 #[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_2MiB   : u64 = 0x200000;
 
-// Sizes in Bytes of 4 KiB
+// Size in Bytes of 4 KiB
 #[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_4KiB   : u64 = 0x1000;
 
-// Sizes in Bytes of 8 B
+// Size in Bytes of 8 B
 #[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_8b     : u64 = 0x8;
 
-// Sizes in Bytes of 1 B
+// Size in Bytes of 1 B
 #[allow(non_upper_case_globals)]
 pub(in crate::memory) const
 SIZE_1B     : u64 = 0x1;
@@ -90,17 +90,10 @@ pub(in crate::memory) const
 USER_STACK_SIZE     : u64 = 0x800000;  //  8 MiB
 
 
-/// Used to initialize something in an invalid state
-pub(in crate::memory)
-trait Invalid {
-    /// Creates an invalid instance of the object
-    fn invalid() -> Self;
-}
-
-/// Used to initialize something from a memory address
+/// Used to initialize something into a memory address
 pub(crate)
 trait Init<P> {
-    /// Creates and writes an instance of the object in the memory location
+    /// Creates an initialized instance of `Self` in the memory location
     /// pointed to by `ptr`
     fn init(ptr:P);
 }
@@ -108,11 +101,12 @@ trait Init<P> {
 /// Used to cast something from a memory address
 pub(crate)
 trait Cast<P> {
-    /// Casts the content of the memory pointed to by `ptr` into an instance
-    /// of the object and returns an constant pointer to it
+    /// Creates a `const` pointer of type `Self` from the memory location
+    /// specified by `ptr`
     fn cast(ptr:P) -> *const Self;
-    /// Casts the content of the memory pointed to by `ptr` into an instance
-    /// of the object and returns an mutable pointer to it
+
+    /// Creates a `mut` pointer of type `Self` from the memory location
+    /// specified by `ptr`
     fn cast_mut(ptr:P) -> *mut Self;
 }
 
@@ -221,23 +215,17 @@ unsafe extern "C" {
     fn safe_copy(dst:u64, src:u64, size:u64);
 }
 
-/// Copies `n` times the Bytes of the default value of `T` into `dst`,
-/// increasing `dst` by the size of `T` each time
+/// Copies `count` times the [`Default`] value of `T` into `dst`, for a total size
+/// that equals `count * size_of::<T>()`
 ///
-/// ## Returns
+/// ## Warning
 ///
-/// Returns a pointer to `dst` casted as `T`.
+/// This function doesn't check whether `dst` is valid or not. Use with care.
 pub(in crate::memory) unsafe
-fn memset_defaulted<T:Default>(dst:u64, n:u64) -> *mut T {
-    let element_size = core::mem::size_of::<T>() as u64;
-    let elem = T::default();
-    let src_addr = &elem as *const T as u64;
-    let mut dst_addr = dst;
-    for _ in 0..n {
-        memcpy(dst_addr, src_addr, element_size);
-        dst_addr += element_size;
+fn memset_defaulted<T:Default>(dst:*mut T, count:usize) {
+    for n in 0..count {
+        core::ptr::write(dst.add(n), T::default());
     }
-    return (dst as *mut u64).cast::<T>();
 }
 
 
