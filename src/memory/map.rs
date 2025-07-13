@@ -224,11 +224,12 @@ impl MemoryMap {
             crate::panic("Initializing non-null MemoryMap");
         }
         unsafe {
-            self.slices = memset_defaulted::<MemorySlice>(slices_paddr.get(), self.size);
+            self.slices = slices_paddr.as_ptr_mut();
+            memset_defaulted(self.slices, self.size as usize);
             let slices_size = core::mem::size_of::<MemorySlice>() as u64 * self.size;
             LAST_RESERVED_SLICE += slices_size / SLICE_SIZE_U64;
             for idx in 0..=LAST_RESERVED_SLICE as usize {
-                *memory_map.slices.add(idx) = MemorySlice::Reserved;
+                self.slices.add(idx).write(MemorySlice::Reserved);
             }
         }
     }

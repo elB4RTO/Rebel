@@ -19,7 +19,7 @@ impl MetadataIterator {
     pub(in crate::memory::paging::tracing)
     fn new(md_array:&[Metadata; METADATA_ARRAY_SIZE], idx:usize) -> Self {
         Self {
-            metadata : &raw const md_array[0],
+            metadata : md_array.as_ptr(),
             index    : idx,
         }
     }
@@ -58,7 +58,7 @@ impl MetadataIteratorMut {
     pub(in crate::memory::paging::tracing)
     fn new(md_array:&mut [Metadata; METADATA_ARRAY_SIZE], idx:usize) -> Self {
         Self {
-            metadata : &raw mut md_array[0],
+            metadata : md_array.as_mut_ptr(),
             index    : idx,
         }
     }

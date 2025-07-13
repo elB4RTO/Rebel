@@ -750,18 +750,15 @@ impl TracingPage {
     ///
     /// ## Returns
     ///
-    /// Returns an [`Err`] if `n_shifts` is greater than `idx` or `idx` is greater than
-    /// or equal to the the size of the array. Otherwise returns an empty [`Ok`].
-    fn shift_left(&mut self, idx:usize, n_shifts:usize) -> Result<(),TracingPageError> {
-        if (idx < n_shifts) | (idx >= self.size) {
+    /// Returns an [`Err`] if `n_shifts` is greater than `src_idx` or `src_idx` is greater
+    /// than or equal to the the size of the array. Otherwise returns an empty [`Ok`].
+    fn shift_left(&mut self, src_idx:usize, n_shifts:usize) -> Result<(),TracingPageError> {
+        if (src_idx < n_shifts) | (src_idx >= self.size) {
             return Err(TracingPageError::LeftShiftPreconditions);
         }
-        let src = &raw const self.metadata[idx];
-        let dst = &raw const self.metadata[idx-n_shifts];
-        let size = (self.size - idx) * core::mem::size_of::<Metadata>();
-        unsafe {
-            safe_copy(dst as u64, src as u64, size as u64);
-        }
+        let dst_idx = src_idx - n_shifts;
+        let end_src_idx = src_idx + (self.size - src_idx);
+        self.metadata.copy_within(src_idx..end_src_idx, dst_idx);
         Ok(())
     }
 
@@ -774,19 +771,16 @@ impl TracingPage {
     ///
     /// ## Returns
     ///
-    /// Returns an [`Err`] if `idx` is out of the bounds of the array, or if the size of
-    /// the array + `n_shifts` is greater than the maximum size of the array. Otherwise
+    /// Returns an [`Err`] if `src_idx` is out of the bounds of the array, or if the size
+    /// of the array + `n_shifts` is greater than the maximum size of the array. Otherwise
     /// returns an empty [`Ok`].
-    fn shift_right(&mut self, idx:usize, n_shifts:usize) -> Result<(),TracingPageError> {
-        if (idx >= self.size) | (self.size+n_shifts > METADATA_ARRAY_SIZE) {
+    fn shift_right(&mut self, src_idx:usize, n_shifts:usize) -> Result<(),TracingPageError> {
+        if (src_idx >= self.size) | (self.size+n_shifts > METADATA_ARRAY_SIZE) {
             return Err(TracingPageError::RightShiftPreconditions);
         }
-        let src = &raw const self.metadata[idx];
-        let dst = &raw const self.metadata[idx+n_shifts];
-        let size = (self.size - idx) * core::mem::size_of::<Metadata>();
-        unsafe {
-            safe_copy(dst as u64, src as u64, size as u64);
-        }
+        let dst_idx = src_idx + n_shifts;
+        let end_src_idx = src_idx + (self.size - src_idx);
+        self.metadata.copy_within(src_idx..end_src_idx, dst_idx);
         self.size += n_shifts;
         Ok(())
     }
@@ -798,9 +792,11 @@ impl TracingPage {
     ///
     /// Panics if `to_size` is out-of-bounds.
     fn shrink(&mut self, to_size:usize) {
-        let dst = &raw const self.metadata[to_size];
-        let n = self.size - to_size;
-        unsafe { memset_defaulted::<Metadata>(dst as u64, n as u64); }
+        let count = self.size - to_size;
+        unsafe {
+            let dst = self.metadata.as_mut_ptr().add(to_size);
+            memset_defaulted(dst, count);
+        }
         self.size = to_size;
     }
 
@@ -1766,9 +1762,8 @@ impl TracingPage {
     pub (in crate::memory::paging::tracing)
     fn clear(&mut self) {
         self.size = 0;
-        let array_addr = &raw const self.metadata[0];
         unsafe {
-            memset_defaulted::<Metadata>(array_addr as u64, METADATA_ARRAY_SIZE as u64);
+            memset_defaulted(self.metadata.as_mut_ptr(), METADATA_ARRAY_SIZE);
         }
     }
 
@@ -1784,63 +1779,41 @@ impl TracingPage {
 }
 
 impl Init<PhysicalAddress> for TracingPage {
-    /// Writes the data of a new [`TracingPage`] in the memory location pointed to by
-    /// the given address
-    ///
-    /// ## Warning
-    ///
-    /// This function implies dereferencing the given pointer
     fn init(ptr:PhysicalAddress) {
         let page = Self::cast_mut(ptr);
         unsafe {
             (*page).size = 0;
-            let array_addr = &raw const (*page).metadata[0];
-            memset_defaulted::<Metadata>(array_addr as u64, METADATA_ARRAY_SIZE as u64);
+            memset_defaulted((*page).metadata.as_mut_ptr(), METADATA_ARRAY_SIZE);
         }
     }
 }
 
 impl Init<LogicalAddress> for TracingPage {
-    /// Writes the data of a new [`TracingPage`] in the memory location pointed to by
-    /// the given address
-    ///
-    /// ## Warning
-    ///
-    /// This function implies dereferencing the given pointer
     fn init(ptr:LogicalAddress) {
         let page = Self::cast_mut(ptr);
         unsafe {
             (*page).size = 0;
-            let array_addr = &raw const (*page).metadata[0];
-            memset_defaulted::<Metadata>(array_addr as u64, METADATA_ARRAY_SIZE as u64);
+            memset_defaulted((*page).metadata.as_mut_ptr(), METADATA_ARRAY_SIZE);
         }
     }
 }
 
 impl Cast<PhysicalAddress> for TracingPage {
-    /// Casts the memory location pointed to by the given address to a `const`
-    /// pointer to a [`TracingPage`]
     fn cast(ptr:PhysicalAddress) -> *const Self {
-        ptr.get() as *const Self
+        ptr.as_ptr()
     }
 
-    /// Casts the memory location pointed to by the given address to a `mut`
-    /// pointer to a [`TracingPage`]
     fn cast_mut(ptr:PhysicalAddress) -> *mut Self {
-        ptr.get() as *mut Self
+        ptr.as_ptr_mut()
     }
 }
 
 impl Cast<LogicalAddress> for TracingPage {
-    /// Casts the memory location pointed to by the given address to a `const`
-    /// pointer to a [`TracingPage`]
     fn cast(ptr:LogicalAddress) -> *const Self {
-        ptr.get() as *const Self
+        ptr.as_ptr()
     }
 
-    /// Casts the memory location pointed to by the given address to a `mut`
-    /// pointer to a [`TracingPage`]
     fn cast_mut(ptr:LogicalAddress) -> *mut Self {
-        ptr.get() as *mut Self
+        ptr.as_ptr_mut()
     }
 }
