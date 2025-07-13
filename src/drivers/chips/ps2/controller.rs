@@ -6,6 +6,7 @@ use crate::drivers::mouse::ps2::mouse::{self, Mouse};
 use crate::memory::{Cast, Init};
 
 
+#[allow(non_upper_case_globals)]
 static mut controller_ptr : u64 = 0;
 
 
@@ -82,7 +83,7 @@ impl Init<u64> for Controller {
     fn init(ptr:u64) {
         unsafe {
             controller_ptr = ptr;
-            *Self::cast_mut(ptr) = Self::default();
+            Self::cast_mut(ptr).write(Self::default());
         }
     }
 }
